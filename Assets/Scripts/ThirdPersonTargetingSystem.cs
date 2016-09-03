@@ -16,15 +16,20 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     public GameObject HUD;
     public GameObject Enemies;
     public Camera main_camera;
+    public SortedList sorted_targets; // targets sorted by closest distance to current target
+                                      // as well as closeness of the angle of the vector to new target
+                                      // to the angle created by the joystick's coordinates
+                                      // if there is a target, otherwise just sorts using InstanceIDs
+                                      // in ascending order
 
+    float current_joystick_angle = 0.0f;
+    int margin_of_error = 20;
     float max_distance = 50.0f;
 
     GameObject targeting_icon;
     Transform targeting_status;
     Transform crosshair;
     CloseCompare compare_distances;
-    SortedList<GameObject, string> forward_targets; // enemies sorted by closest forward distance to current target
-    SortedList<GameObject, string> backward_targets; // enemies sorted by closest backward distance to current target
     Rotation rt;
 
     // Use this for initialization
@@ -42,8 +47,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         targeting_icon.GetComponent<Image>().transform.localScale = new Vector3(desired_scale, desired_scale, desired_scale);
 
         compare_distances = new CloseCompare(this);
-        forward_targets = new SortedList<GameObject, string>(compare_distances);
-        backward_targets = new SortedList<GameObject, string>(compare_distances);
+        sorted_targets = new SortedList(compare_distances);
 
         rt = new Rotation();
     }
@@ -92,7 +96,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             if (locked_on && to_target.magnitude <= max_distance)
             {
                 SetTargetOnGui();
-                UpdateTargets();
             }
             else
             {
@@ -104,102 +107,12 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             }
 
             // user input related
-            if (locked_on && Input.GetAxis("RightJoystickX") != 0 && Input.GetAxis("RightJoystickY") == 0 && !switching)
+            if ( locked_on && (Input.GetAxis("RightJoystickX") != 0 || Input.GetAxis("RightJoystickY") != 0) && !switching )
             {
-                GameObject new_target_forward = null;
-                GameObject new_target_back = null;
-
-                if (Input.GetAxis("RightJoystickX") < 0)
-                {
-                    new_target_forward = FindClosest(ref forward_targets, "L");
-                    new_target_back = FindClosest(ref backward_targets, "L");
-                }
-                else
-                {
-                    new_target_forward = FindClosest(ref forward_targets, "R");
-                    new_target_back = FindClosest(ref backward_targets, "R");
-                }
-
-                if (new_target_forward != null && new_target_back != null)
-                {
-                    if (compare_distances.Compare(new_target_forward, new_target_back) == 1)
-                    {
-                        to_target = new_target_forward.transform.position - transform.position;
-                        if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                        {
-                            target = new_target_forward;
-                            switching = true;
-                        }
-                    }
-                    else
-                    {
-                        to_target = new_target_back.transform.position - transform.position;
-                        if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                        {
-                            target = new_target_back;
-                            switching = true;
-                        }
-                    }
-                }
-                else if (new_target_forward != null)
-                {
-                    // modularize
-                    to_target = new_target_forward.transform.position - transform.position;
-                    if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                    {
-                        target = new_target_forward;
-                        switching = true;
-                    }
-                }
-                else if (new_target_back != null)
-                {
-                    to_target = new_target_back.transform.position - transform.position;
-                    if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                    {
-                        target = new_target_back;
-                        switching = true;
-                    }
-                }
-            }
-            else if (locked_on && Input.GetAxis("RightJoystickX") != 0 && Input.GetAxis("RightJoystickY") != 0 && !switching)
-            {
-                GameObject new_target = null;
-
-                if (Input.GetAxis("RightJoystickY") < 0)
-                {
-                    if (Input.GetAxis("RightJoystickX") < 0)
-                    {
-                        new_target = FindClosest(ref forward_targets, "L");
-                    }
-                    else
-                    {
-                        new_target = FindClosest(ref forward_targets, "R");
-                    }
-                }
-                else
-                {
-                    if (Input.GetAxis("RightJoystickX") < 0)
-                    {
-                        new_target = FindClosest(ref backward_targets, "L");
-                    }
-                    else
-                    {
-                        new_target = FindClosest(ref backward_targets, "R");
-                    }
-                }
-
-                if (new_target != null)
-                {
-                    to_target = new_target.transform.position - transform.position;
-                    if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                    {
-                        target = new_target;
-                        switching = true;
-                    }
-                }
+                SetNewTarget();   
             }
 
-            if (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0 && switching)
+            if ( locked_on && (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0) && switching )
             {
                 switching = false;
             }
@@ -262,73 +175,42 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         targeting_icon.GetComponent<RectTransform>().anchoredPosition = targeting_icon_position;
     }
 
-    void UpdateTargets()
+    void SetNewTarget()
     {
-        forward_targets.Clear();
-        backward_targets.Clear();
+        GameObject new_target = null;
 
-        if (target != null)
+        float input_x = Input.GetAxis("RightJoystickX");
+        float input_y = -Input.GetAxis("RightJoystickY");
+        Debug.Log("Input x: " + input_x + ", Input y: " + input_y);
+
+        current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
+        Debug.Log("Joystick angle: " + current_joystick_angle);
+
+        sorted_targets.Clear();
+        for (int i = 0; i < Enemies.transform.childCount; ++i)
         {
-            Vector3 facing_target = transform.forward;
-            Transform target_transform = target.transform;
-
-            Vector3 facing_taget_xz = new Vector3(facing_target.x, 0, facing_target.z);
-            float to_target_angle_from_z_axis = rt.CalculateXZRotation(facing_taget_xz);
-
-            int count = 0;
-            int forward_count = 0;
-            int backward_count = 0;
-            for (int i = 0; i < Enemies.transform.childCount; ++i)
+            GameObject current_enemy = Enemies.transform.GetChild(i).gameObject;
+            Vector3 to_current_enemy = current_enemy.transform.position - transform.position;
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, to_current_enemy, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer"))
+                && current_enemy.GetInstanceID() != target.GetInstanceID() )
             {
-                Transform current_enemy = Enemies.transform.GetChild(i);
-                Vector3 player_to_enemy = current_enemy.transform.position - transform.position;
-
-                // to make sure we are not looking at the same enemy
-                RaycastHit hit;
-                if ( current_enemy.GetInstanceID() != target_transform.GetInstanceID() &&
-                    Physics.Raycast(transform.position, player_to_enemy, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
-                {
-                    Vector3 target_to_current_enemy = current_enemy.transform.position - target_transform.position;
-
-                    string direction = "";
-
-                    // rotate vector from current target to new enemy towards the z-axis by the same offset of player to target vector
-                    // and use this vector to determine if the new target is to the left or right relative to player to target vector
-                    Vector3 target_rotated_to_current_enemy_rotated = Quaternion.AngleAxis(-to_target_angle_from_z_axis, Vector3.up) * target_to_current_enemy;
-                    if ( target_rotated_to_current_enemy_rotated.x < 0 )
-                    {
-                        direction = "L";
-                    }
-                    else
-                    {
-                        direction = "R";
-                    }
-
-                    // select whether the current target is behind or in front
-                    Vector3 target_to_current_enemy_xz = new Vector3(target_to_current_enemy.x, 0, target_to_current_enemy.z);
-                    float angle_to_new_target = Vector3.Angle(facing_taget_xz, target_to_current_enemy_xz);
-                    if (angle_to_new_target < 90)
-                    {
-                        forward_targets.Add( current_enemy.gameObject, direction ); // the target is in front of the current target
-                                                                                   // relative to player's position
-                        ++forward_count;
-                    }
-                    else
-                    {
-                        backward_targets.Add( current_enemy.gameObject, direction ); // the target is behind the target
-                                                                                   // relative to player's position
-                        ++backward_count;
-                    }
-
-                    ++count;
-                }
+                sorted_targets.Add(current_enemy, current_enemy);
             }
+        }
 
-            Debug.Log("Valid enemies: " + count);
-            Debug.Log("forward_count: " + forward_count);
-            Debug.Log("backward_count:" + backward_count);
-            Debug.Log("Size forward: " + forward_targets.Count);
-            Debug.Log("Size backward: " + backward_targets.Count);
+        //Debug.Log("Sorted targets count: " + sorted_targets.Count);
+
+        new_target = (GameObject) sorted_targets.GetKey(0);
+        Vector3 to_new_target = new_target.transform.position - target.transform.position;
+        float angle_to_new_target = rt.CalculateXZRotation(new Vector3(to_new_target.x, 0, to_new_target.z));
+        Debug.Log("Angle for selected target: " + angle_to_new_target);
+        Debug.Log("Distance for selected target: " + Vector3.Magnitude(to_new_target));
+
+        if (new_target != null)
+        {
+            target = new_target;
+            switching = true;
         }
     }
 
@@ -347,29 +229,65 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             Vector3 to_a = a.transform.position - parent.target.transform.position;
             Vector3 to_b = b.transform.position - parent.target.transform.position;
 
-            float distance_a = Vector3.Magnitude(to_a);
-            float distance_b = Vector3.Magnitude(to_b);
+            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z));
+            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z));
+            Debug.Log("angle a: " + angle_a);
+            Debug.Log("angle b: " + angle_b);
 
-            if (distance_a < distance_b)
+            int diff_angle_a = (int) Mathf.Abs(parent.current_joystick_angle - angle_a);
+            //Debug.Log("Diff angle a: " + diff_angle_a);
+            int diff_angle_b = (int) Mathf.Abs(parent.current_joystick_angle - angle_b);
+            //Debug.Log("Diff angle b: " + diff_angle_b);
+
+            if (diff_angle_a < diff_angle_b)
             {
-                return 1;
+                float distance_a = Vector3.Magnitude(to_a);
+                float distance_b = Vector3.Magnitude(to_b);
+
+                Debug.Log("distance a: " + distance_a);
+                Debug.Log("distance b: " + distance_b);
+
+                if (diff_angle_a + parent.margin_of_error < diff_angle_b)
+                {
+                    return -1;
+                }
+                else if (distance_a <= distance_b)
+                {
+                    return -1;
+                }
+            }
+            if (diff_angle_a == diff_angle_b)
+            {
+                float distance_a = Vector3.Magnitude(to_a);
+                float distance_b = Vector3.Magnitude(to_b);
+
+                Debug.Log("distance a: " + distance_a);
+                Debug.Log("distance b: " + distance_b);
+
+                if (distance_a <= distance_b)
+                {
+                    return -1;
+                }
+            }
+            if (diff_angle_a > diff_angle_b)
+            {
+                float distance_a = Vector3.Magnitude(to_a);
+                float distance_b = Vector3.Magnitude(to_b);
+
+                Debug.Log("distance a: " + distance_a);
+                Debug.Log("distance b: " + distance_b);
+
+                if (diff_angle_a > diff_angle_b + parent.margin_of_error)
+                {
+                    return 1;
+                }
+                else if (distance_a <= distance_b)
+                {
+                    return -1;
+                }
             }
 
-            return 0;
+            return 1;
         }
-    }
-
-    GameObject FindClosest(ref SortedList<GameObject, string> desired_map, string direction)
-    {
-        GameObject desired_obj = null;
-        foreach (KeyValuePair<GameObject, string> pair in desired_map)
-        {
-            if (pair.Value == direction)
-            {
-                return pair.Key;
-            }
-        }
-
-        return desired_obj;
     }
 }
