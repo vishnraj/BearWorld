@@ -14,8 +14,47 @@ namespace Utility
                 return -Vector3.Angle(Vector3.forward, current_XZ_vector);
         }
 
-        public float CalculateXZRotation(Vector3 current_XZ_vector, Vector3 custom_forward) {
-            if (current_XZ_vector.x > custom_forward.x)
+        // calculate the XZ rotation based on camera rotation and the custom angle passed in
+        public float CalculateXZRotation(Vector3 current_XZ_vector, Vector3 custom_forward, bool forward_facing = true) {
+            bool left = false;
+            Vector3 z_axis = Vector3.forward;
+            float xz_vector_angle_from_z;
+            float forward_angle_from_z;
+
+            // the forward facing camera
+            if (custom_forward.z < 0) {
+                z_axis = -z_axis;
+            }
+
+            if (forward_facing) 
+            {
+                if (current_XZ_vector.x >= 0)
+                    xz_vector_angle_from_z = Vector3.Angle(z_axis, current_XZ_vector);
+                else
+                    xz_vector_angle_from_z = -Vector3.Angle(z_axis, current_XZ_vector);
+
+                if (custom_forward.x >= 0)
+                    forward_angle_from_z = Vector3.Angle(z_axis, custom_forward);
+                else
+                    forward_angle_from_z = -Vector3.Angle(z_axis, custom_forward);          
+            }
+            else 
+            {
+                if (current_XZ_vector.x >= 0)
+                    xz_vector_angle_from_z = -Vector3.Angle(z_axis, current_XZ_vector);
+                else
+                    xz_vector_angle_from_z = Vector3.Angle(z_axis, current_XZ_vector);
+
+                if (custom_forward.x >= 0)
+                    forward_angle_from_z = -Vector3.Angle(z_axis, custom_forward);
+                else
+                    forward_angle_from_z = Vector3.Angle(z_axis, custom_forward);
+            }
+
+            if (forward_angle_from_z > xz_vector_angle_from_z)
+                left = true;
+
+            if (!left)
                 return Vector3.Angle(custom_forward, current_XZ_vector);
             else
                 return -Vector3.Angle(custom_forward, current_XZ_vector);

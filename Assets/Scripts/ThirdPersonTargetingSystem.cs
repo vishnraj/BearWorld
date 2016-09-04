@@ -10,6 +10,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     public bool locked_on = false;
     public bool can_lock_on = false;
     public bool switching = false;
+    public bool forward_facing = true;
 
     public Vector3 direction;
     public GameObject target;
@@ -24,7 +25,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     float input_x = 0.0f;
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
-    float margin_of_error = 20.0f;
+    float margin_of_error = 10.0f;
     float max_distance = 70.0f;
 
     GameObject targeting_icon;
@@ -186,9 +187,17 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         //Debug.Log("Input x: " + input_x + ", Input y: " + input_y);
 
         if ((input_x <= 0 && input_y < 0) || (input_x > 0 && input_y < 0)) 
+        {
             current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y), -Vector3.forward);
+            Debug.Log("here");
+        }
         else
             current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
+
+        if (transform.forward.z < 0)
+            forward_facing = false;
+        else
+            forward_facing = true;
 
         Debug.Log("Joystick angle: " + current_joystick_angle);
 
@@ -232,12 +241,18 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             Vector3 to_b = b.transform.position - parent.target.transform.position;
             Vector3 player_forward = new Vector3(parent.transform.forward.x, 0, parent.transform.forward.z);
 
-            if ((parent.input_x <= 0 && parent.input_y < 0) || (parent.input_x > 0 && parent.input_y < 0)) {
+            if ((parent.input_x <= 0 && parent.input_y < 0) || (parent.input_x > 0 && parent.input_y < 0)) 
+            {
                 player_forward = -player_forward;
             }
 
-            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z), player_forward);
-            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z), player_forward);
+            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z), player_forward, parent.forward_facing);
+            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z), player_forward, parent.forward_facing);
+
+            if (parent.current_joystick_angle < 0 && angle_b > 0)
+                return -1;
+            else if (parent.current_joystick_angle > 0 && angle_b < 0)
+                return -1;
 
             Debug.Log("Instance ID a: " + a.gameObject.GetInstanceID());
             Debug.Log("Instance ID b: " + b.gameObject.GetInstanceID());
