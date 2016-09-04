@@ -21,10 +21,11 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                                       // to the angle created by the joystick's coordinates
                                       // if there is a target, otherwise just sorts using InstanceIDs
                                       // in ascending order
-
+    float input_x = 0.0f;
+    float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
-    int margin_of_error = 20;
-    float max_distance = 50.0f;
+    float margin_of_error = 20.0f;
+    float max_distance = 70.0f;
 
     GameObject targeting_icon;
     Transform targeting_status;
@@ -109,7 +110,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             // user input related
             if ( locked_on && (Input.GetAxis("RightJoystickX") != 0 || Input.GetAxis("RightJoystickY") != 0) && !switching )
             {
-                SetNewTarget();   
+                switching = true;
+                SetNewTarget();
             }
 
             if ( locked_on && (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0) && switching )
@@ -179,38 +181,38 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     {
         GameObject new_target = null;
 
-        float input_x = Input.GetAxis("RightJoystickX");
-        float input_y = -Input.GetAxis("RightJoystickY");
-        Debug.Log("Input x: " + input_x + ", Input y: " + input_y);
+        input_x = Input.GetAxis("RightJoystickX");
+        input_y = -Input.GetAxis("RightJoystickY");
+        //Debug.Log("Input x: " + input_x + ", Input y: " + input_y);
 
-        current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
+        if ((input_x <= 0 && input_y < 0) || (input_x > 0 && input_y < 0)) 
+            current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y), -Vector3.forward);
+        else
+            current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
+
         Debug.Log("Joystick angle: " + current_joystick_angle);
 
         sorted_targets.Clear();
-        for (int i = 0; i < Enemies.transform.childCount; ++i)
-        {
+        for (int i = 0; i < Enemies.transform.childCount; ++i) {
             GameObject current_enemy = Enemies.transform.GetChild(i).gameObject;
-            Vector3 to_current_enemy = current_enemy.transform.position - transform.position;
-            RaycastHit hit;
-            if (Physics.Raycast(transform.position, to_current_enemy, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer"))
-                && current_enemy.GetInstanceID() != target.GetInstanceID() )
+            Vector3 ret = main_camera.WorldToViewportPoint(current_enemy.transform.position);
+
+            if (current_enemy.GetInstanceID() != target.GetInstanceID() &&
+                (ret.x > 0 && ret.x < 1) && (ret.y > 0 && ret.y < 1)) 
             {
-                sorted_targets.Add(current_enemy, current_enemy);
+                sorted_targets.Add(current_enemy, current_enemy.GetInstanceID());
             }
         }
 
         //Debug.Log("Sorted targets count: " + sorted_targets.Count);
 
-        new_target = (GameObject) sorted_targets.GetKey(0);
-        Vector3 to_new_target = new_target.transform.position - target.transform.position;
-        float angle_to_new_target = rt.CalculateXZRotation(new Vector3(to_new_target.x, 0, to_new_target.z));
-        Debug.Log("Angle for selected target: " + angle_to_new_target);
-        Debug.Log("Distance for selected target: " + Vector3.Magnitude(to_new_target));
+        try {
+            Debug.Log("Selected Target ID: " + sorted_targets.GetByIndex(0));
 
-        if (new_target != null)
-        {
+            new_target = (GameObject)sorted_targets.GetKey(0);    
             target = new_target;
-            switching = true;
+        } catch (System.ArgumentOutOfRangeException) {
+            Debug.Log("All objects are out of range.");
         }
     }
 
@@ -228,9 +230,17 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         {
             Vector3 to_a = a.transform.position - parent.target.transform.position;
             Vector3 to_b = b.transform.position - parent.target.transform.position;
+            Vector3 player_forward = new Vector3(parent.transform.forward.x, 0, parent.transform.forward.z);
 
-            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z));
-            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z));
+            if ((parent.input_x <= 0 && parent.input_y < 0) || (parent.input_x > 0 && parent.input_y < 0)) {
+                player_forward = -player_forward;
+            }
+
+            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z), player_forward);
+            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z), player_forward);
+
+            Debug.Log("Instance ID a: " + a.gameObject.GetInstanceID());
+            Debug.Log("Instance ID b: " + b.gameObject.GetInstanceID());
             Debug.Log("angle a: " + angle_a);
             Debug.Log("angle b: " + angle_b);
 
@@ -244,8 +254,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 float distance_a = Vector3.Magnitude(to_a);
                 float distance_b = Vector3.Magnitude(to_b);
 
-                Debug.Log("distance a: " + distance_a);
-                Debug.Log("distance b: " + distance_b);
+                //Debug.Log("distance a: " + distance_a);
+                //Debug.Log("distance b: " + distance_b);
 
                 if (diff_angle_a + parent.margin_of_error < diff_angle_b)
                 {
@@ -261,8 +271,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 float distance_a = Vector3.Magnitude(to_a);
                 float distance_b = Vector3.Magnitude(to_b);
 
-                Debug.Log("distance a: " + distance_a);
-                Debug.Log("distance b: " + distance_b);
+                //Debug.Log("distance a: " + distance_a);
+                //Debug.Log("distance b: " + distance_b);
 
                 if (distance_a <= distance_b)
                 {
@@ -274,8 +284,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 float distance_a = Vector3.Magnitude(to_a);
                 float distance_b = Vector3.Magnitude(to_b);
 
-                Debug.Log("distance a: " + distance_a);
-                Debug.Log("distance b: " + distance_b);
+                //Debug.Log("distance a: " + distance_a);
+                //Debug.Log("distance b: " + distance_b);
 
                 if (diff_angle_a > diff_angle_b + parent.margin_of_error)
                 {
