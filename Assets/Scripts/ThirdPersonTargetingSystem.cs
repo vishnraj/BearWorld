@@ -25,8 +25,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     float input_x = 0.0f;
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
-    float margin_of_error = 10.0f;
-    float max_distance = 70.0f;
+    float margin_of_error = 5.0f;
+    float max_distance = 62.5f;
 
     GameObject targeting_icon;
     Transform targeting_status;
@@ -60,6 +60,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         RaycastHit hit;
         if (target != null)
         {
+            // on case not handled here is when the target is in range
+            // but will be off screen when the player locks on
+            // to the target
+
             // capture target related
             Vector3 to_target = target.transform.position - transform.position;
             if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
@@ -189,7 +193,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         if ((input_x <= 0 && input_y < 0) || (input_x > 0 && input_y < 0)) 
         {
             current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y), -Vector3.forward);
-            Debug.Log("here");
         }
         else
             current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
@@ -199,7 +202,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         else
             forward_facing = true;
 
-        Debug.Log("Joystick angle: " + current_joystick_angle);
+        //Debug.Log("Joystick angle: " + current_joystick_angle);
 
         sorted_targets.Clear();
         for (int i = 0; i < Enemies.transform.childCount; ++i) {
@@ -216,7 +219,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         //Debug.Log("Sorted targets count: " + sorted_targets.Count);
 
         try {
-            Debug.Log("Selected Target ID: " + sorted_targets.GetByIndex(0));
+            //Debug.Log("Selected Target ID: " + sorted_targets.GetByIndex(0));
 
             new_target = (GameObject)sorted_targets.GetKey(0);    
             target = new_target;
@@ -253,12 +256,14 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 return -1;
             else if (parent.current_joystick_angle > 0 && angle_b < 0)
                 return -1;
-
+            
+            /*
             Debug.Log("Instance ID a: " + a.gameObject.GetInstanceID());
             Debug.Log("Instance ID b: " + b.gameObject.GetInstanceID());
             Debug.Log("angle a: " + angle_a);
             Debug.Log("angle b: " + angle_b);
-
+            */
+             
             int diff_angle_a = (int) Mathf.Abs(parent.current_joystick_angle - angle_a);
             //Debug.Log("Diff angle a: " + diff_angle_a);
             int diff_angle_b = (int) Mathf.Abs(parent.current_joystick_angle - angle_b);
