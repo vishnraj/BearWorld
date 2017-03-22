@@ -48,7 +48,7 @@ public class FixedCamera : MonoBehaviour
 
         transform.rotation = new Quaternion(0, 0, 0, 0);
 
-        float player_facing_angle = rt.CalculateXZRotation(player.transform.forward);
+        float player_facing_angle = rt.CalculateZXRotation(player.transform.forward);
         transform.Rotate(Vector3.up, player_facing_angle);
     }
 }

@@ -90,14 +90,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
-    float CalculateThirdPersonXZRotation()
+    float CalculateThirdPersonZXRotation()
     {
         // Rotation to camera
-        float theta_1 = rt.CalculateXZRotation(new Vector3(main_camera.transform.forward.x, 0, main_camera.transform.forward.z));
+        float theta_1 = rt.CalculateZXRotation(new Vector3(main_camera.transform.forward.x, 0, main_camera.transform.forward.z));
         // Rotation to new direction
-        float theta_2 = rt.CalculateXZRotation(new Vector3(Input.GetAxis("LeftJoystickX"), 0, -Input.GetAxis("LeftJoystickY")));
+        float theta_2 = rt.CalculateZXRotation(new Vector3(Input.GetAxis("LeftJoystickX"), 0, -Input.GetAxis("LeftJoystickY")));
         // Rotation to player's forward vector
-        float theta_3 = rt.CalculateXZRotation(new Vector3(transform.forward.x, 0, transform.forward.z));
+        float theta_3 = rt.CalculateZXRotation(new Vector3(transform.forward.x, 0, transform.forward.z));
         // Rotation movement direction
         float theta_final = theta_1 + theta_2 - theta_3;
 
@@ -107,7 +107,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     // Calculates movement direction
     void CalculateFreeRoamRotation()
     {
-        float theta_final = CalculateThirdPersonXZRotation();
+        float theta_final = CalculateThirdPersonZXRotation();
 
         if (Input.GetAxis("LeftTriggerAxis") > 0)
         {
@@ -124,8 +124,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     {
         // Rotation to target
         Vector3 to_target = target - transform.position;
-        float theta_to_target = rt.CalculateXZRotation(new Vector3(to_target.x, 0, to_target.z));
-        float theta_to_forward = rt.CalculateXZRotation(new Vector3(transform.forward.x, 0, transform.forward.z));
+        float theta_to_target = rt.CalculateZXRotation(new Vector3(to_target.x, 0, to_target.z));
+        float theta_to_forward = rt.CalculateZXRotation(new Vector3(transform.forward.x, 0, transform.forward.z));
         float theta_to_rotate = theta_to_target - theta_to_forward;
 
         // add code to rotate around player's x axis to face the target
@@ -134,7 +134,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
         if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0)
         {
-            float theta_final = CalculateThirdPersonXZRotation();
+            float theta_final = CalculateThirdPersonZXRotation();
             movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
         }
         else

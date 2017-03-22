@@ -190,25 +190,40 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         input_y = -Input.GetAxis("RightJoystickY");
         //Debug.Log("Input x: " + input_x + ", Input y: " + input_y);
 
-        if ((input_x <= 0 && input_y < 0) || (input_x > 0 && input_y < 0)) 
-        {
-            current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y), -Vector3.forward);
-        }
-        else
-            current_joystick_angle = rt.CalculateXZRotation(new Vector3(input_x, 0, input_y));
-
-        if (transform.forward.z < 0)
-            forward_facing = false;
-        else
-            forward_facing = true;
-
-        //Debug.Log("Joystick angle: " + current_joystick_angle);
+		current_joystick_angle = rt.CalculateZXRotation(new Vector3(input_x, 0, input_y));
+		//Debug.Log("current_joystick_angle: " + current_joystick_angle);
 
         sorted_targets.Clear();
-        for (int i = 0; i < Enemies.transform.childCount; ++i) {
-            GameObject current_enemy = Enemies.transform.GetChild(i).gameObject;
-            Vector3 ret = main_camera.WorldToViewportPoint(current_enemy.transform.position);
+		for (int i = 0; i < Enemies.transform.childCount; ++i) {
+			GameObject current_enemy = Enemies.transform.GetChild(i).gameObject;
 
+			// here we will remove enemies from consideration, if, after being normalized to
+			// an x and y (really z and x) pair that is in the player's axis, they are not
+			// of the same sign for their corresponding set of inputs from the joystick
+			Vector3 player_forward = new Vector3(transform.forward.x, 0, transform.forward.z);
+
+			Vector3 to_current_enemy = current_enemy.transform.position - target.transform.position;
+			float angle_to_new_target = rt.CalculateZXRotation(new Vector3(to_current_enemy.x, 0, to_current_enemy.z), player_forward);
+			//Debug.Log("angle_to_new_target: " + angle_to_new_target);
+				
+			// Cos is calculated on y because z is effectively y
+			// in our coordinate system
+			float new_target_x_unit = Mathf.Sin(Mathf.Deg2Rad * angle_to_new_target);
+			float new_target_y_unit = Mathf.Cos(Mathf.Deg2Rad * angle_to_new_target);
+
+			/*
+			Debug.Log("new_target_x_unit: " + new_target_x_unit);
+			Debug.Log("new_target_y_unit: " + new_target_y_unit);
+			*/
+
+			bool bad_x = (new_target_x_unit > 0 && input_x < 0) || (new_target_x_unit < 0 && input_x > 0);
+			bool bad_y = (new_target_y_unit > 0 && input_y < 0) || (new_target_y_unit < 0 && input_y > 0);
+			if (bad_x || bad_y)
+			{
+				continue;
+			}
+
+			Vector3 ret = main_camera.WorldToViewportPoint(current_enemy.transform.position);
             if (current_enemy.GetInstanceID() != target.GetInstanceID() &&
                 (ret.x > 0 && ret.x < 1) && (ret.y > 0 && ret.y < 1)) 
             {
@@ -220,10 +235,32 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         try {
             //Debug.Log("Selected Target ID: " + sorted_targets.GetByIndex(0));
+			new_target = (GameObject)sorted_targets.GetKey(0);
 
-            new_target = (GameObject)sorted_targets.GetKey(0);    
-            target = new_target;
+			Vector3 player_forward = new Vector3(transform.forward.x, 0, transform.forward.z);
+
+			Vector3 to_new_target = new_target.transform.position - target.transform.position;
+			float angle_to_new_target = rt.CalculateZXRotation(new Vector3(to_new_target.x, 0, to_new_target.z), player_forward);
+			//Debug.Log("angle_to_new_target: " + angle_to_new_target);
+
+			// Cos is calculated on y because z is effectively y
+			// in our coordinate system
+			float new_target_x_unit = Mathf.Sin(Mathf.Deg2Rad * angle_to_new_target);
+			float new_target_y_unit = Mathf.Cos(Mathf.Deg2Rad * angle_to_new_target);
+
+			/*
+			Debug.Log("input x: " + input_x);
+			Debug.Log("input y: " + input_y);
+			Debug.Log("new_target_x_unit: " + new_target_x_unit);
+			Debug.Log("new_target_y_unit: " + new_target_y_unit);
+			*/
+
+			target = new_target;
         } catch (System.ArgumentOutOfRangeException) {
+			/*
+			Debug.Log("input x: " + input_x);
+			Debug.Log("input y: " + input_y);
+			*/
             Debug.Log("All objects are out of range.");
         }
     }
@@ -244,19 +281,9 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             Vector3 to_b = b.transform.position - parent.target.transform.position;
             Vector3 player_forward = new Vector3(parent.transform.forward.x, 0, parent.transform.forward.z);
 
-            if ((parent.input_x <= 0 && parent.input_y < 0) || (parent.input_x > 0 && parent.input_y < 0)) 
-            {
-                player_forward = -player_forward;
-            }
+            float angle_a = parent.rt.CalculateZXRotation(new Vector3(to_a.x, 0, to_a.z), player_forward);
+            float angle_b = parent.rt.CalculateZXRotation(new Vector3(to_b.x, 0, to_b.z), player_forward);
 
-            float angle_a = parent.rt.CalculateXZRotation(new Vector3(to_a.x, 0, to_a.z), player_forward, parent.forward_facing);
-            float angle_b = parent.rt.CalculateXZRotation(new Vector3(to_b.x, 0, to_b.z), player_forward, parent.forward_facing);
-
-            if (parent.current_joystick_angle < 0 && angle_b > 0)
-                return -1;
-            else if (parent.current_joystick_angle > 0 && angle_b < 0)
-                return -1;
-            
             /*
             Debug.Log("Instance ID a: " + a.gameObject.GetInstanceID());
             Debug.Log("Instance ID b: " + b.gameObject.GetInstanceID());

@@ -7,58 +7,37 @@ namespace Utility
     {
         // Rotation to the current vector along x-z plane around y-axis
         // Angle is from positive z-axis
-        public float CalculateXZRotation(Vector3 current_XZ_vector) {
-            if (current_XZ_vector.x > 0)
-                return Vector3.Angle(Vector3.forward, current_XZ_vector);
+        public float CalculateZXRotation(Vector3 current_ZX_vector) {
+            if (current_ZX_vector.x > 0)
+                return Vector3.Angle(Vector3.forward, current_ZX_vector);
             else
-                return -Vector3.Angle(Vector3.forward, current_XZ_vector);
+                return -Vector3.Angle(Vector3.forward, current_ZX_vector);
         }
 
-        // calculate the XZ rotation based on camera rotation and the custom angle passed in
-        public float CalculateXZRotation(Vector3 current_XZ_vector, Vector3 custom_forward, bool forward_facing = true) {
-            bool left = false;
-            Vector3 z_axis = Vector3.forward;
-            float xz_vector_angle_from_z;
-            float forward_angle_from_z;
+		// calculate the ZX rotation based on the custom vector passed in and the camera rotation
+		public float CalculateZXRotation(Vector3 current_ZX_vector, Vector3 custom_forward) {
+			float forward_angle_from_z;
 
-            // the forward facing camera
-            if (custom_forward.z < 0) {
-                z_axis = -z_axis;
-            }
+			if (custom_forward.x >= 0)
+				forward_angle_from_z = Vector3.Angle(Vector3.forward, custom_forward);
+			else
+				forward_angle_from_z = -Vector3.Angle(Vector3.forward, custom_forward);
 
-            if (forward_facing) 
-            {
-                if (current_XZ_vector.x >= 0)
-                    xz_vector_angle_from_z = Vector3.Angle(z_axis, current_XZ_vector);
-                else
-                    xz_vector_angle_from_z = -Vector3.Angle(z_axis, current_XZ_vector);
+			//custom_forward = Quaternion.Euler(0, forward_angle_from_z, 0) * custom_forward;
+			Vector3 rotated_current_ZX_vector = Quaternion.Euler(0, -forward_angle_from_z, 0) * current_ZX_vector;
 
-                if (custom_forward.x >= 0)
-                    forward_angle_from_z = Vector3.Angle(z_axis, custom_forward);
-                else
-                    forward_angle_from_z = -Vector3.Angle(z_axis, custom_forward);          
-            }
-            else 
-            {
-                if (current_XZ_vector.x >= 0)
-                    xz_vector_angle_from_z = -Vector3.Angle(z_axis, current_XZ_vector);
-                else
-                    xz_vector_angle_from_z = Vector3.Angle(z_axis, current_XZ_vector);
-
-                if (custom_forward.x >= 0)
-                    forward_angle_from_z = -Vector3.Angle(z_axis, custom_forward);
-                else
-                    forward_angle_from_z = Vector3.Angle(z_axis, custom_forward);
-            }
-
-            if (forward_angle_from_z > xz_vector_angle_from_z)
-                left = true;
-
-            if (!left)
-                return Vector3.Angle(custom_forward, current_XZ_vector);
-            else
-                return -Vector3.Angle(custom_forward, current_XZ_vector);
-        }
+			if (rotated_current_ZX_vector.x >= 0)
+				return Vector3.Angle(custom_forward, current_ZX_vector);
+			else
+				return -Vector3.Angle(custom_forward, current_ZX_vector);	
+		}
+			
+		public float CalculateXZRotation(Vector3 current_XZ_vector) {
+			if (current_XZ_vector.z > 0)
+				return Vector3.Angle(Vector3.right, current_XZ_vector);
+			else
+				return -Vector3.Angle(Vector3.right, current_XZ_vector);
+		}
 
         // Rotation to the current vector along the x-y plane around z-axis
         // Angle is from positive x-axis
