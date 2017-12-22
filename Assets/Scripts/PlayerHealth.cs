@@ -15,8 +15,8 @@ public class PlayerHealth : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        player_icon = HUD.transform.FindChild("PlayerIcon");
-        health_remaining = HUD.transform.FindChild("HealthRemaining");
+        player_icon = HUD.transform.Find("PlayerIcon");
+        health_remaining = HUD.transform.Find("HealthRemaining");
 
         player_icon.gameObject.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(player),
             new Rect(0, 0, 128, 128), new Vector2());

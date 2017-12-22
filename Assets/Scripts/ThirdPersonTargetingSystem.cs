@@ -37,11 +37,11 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        targeting_status = HUD.transform.FindChild("TargetingStatus");
-        crosshair = HUD.transform.FindChild("Crosshair");
+        targeting_status = HUD.transform.Find("TargetingStatus");
+        crosshair = HUD.transform.Find("Crosshair");
         targeting_icon = new GameObject();
         targeting_icon.AddComponent<Image>();
-        targeting_icon.GetComponent<Image>().sprite = HUD.transform.FindChild("Crosshair").GetComponent<AimingSystem>().target_reticle;
+        targeting_icon.GetComponent<Image>().sprite = HUD.transform.Find("Crosshair").GetComponent<AimingSystem>().target_reticle;
         targeting_icon.name = "TargetingIcon";
 
         float desired_scale = .4f;
@@ -165,7 +165,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         if (!targeting_icon.GetComponent<Image>().enabled)
         {
             targeting_icon.GetComponent<Image>().enabled = true;
-            targeting_icon.GetComponent<Image>().sprite = HUD.transform.FindChild("Crosshair").GetComponent<AimingSystem>().target_reticle;
+            targeting_icon.GetComponent<Image>().sprite = HUD.transform.Find("Crosshair").GetComponent<AimingSystem>().target_reticle;
         }
 
         Vector2 target_screen_point = main_camera.WorldToViewportPoint(target.transform.position);

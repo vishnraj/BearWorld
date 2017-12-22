@@ -27,12 +27,12 @@ public class ItemSystem : MonoBehaviour
     {
         tps = GetComponentInChildren<ThirdPersonTargetingSystem>();
 
-        equipped_icon = HUD.transform.FindChild("EquippedIcon");
-        equipped_status = HUD.transform.FindChild("EquippedStatus");
+        equipped_icon = HUD.transform.Find("EquippedIcon");
+        equipped_status = HUD.transform.Find("EquippedStatus");
 
-        ammo_icon = HUD.transform.FindChild("AmmoIcon");
-        ammo_remaining = HUD.transform.FindChild("AmmoRemaining");
-        crosshair = HUD.transform.FindChild("Crosshair");
+        ammo_icon = HUD.transform.Find("AmmoIcon");
+        ammo_remaining = HUD.transform.Find("AmmoRemaining");
+        crosshair = HUD.transform.Find("Crosshair");
 
         UpdateEquippedToSelected(); // for now it is first set here (eventually when an item is picked up and then later when 
         // it is picked and selected from inventory list).
@@ -77,7 +77,7 @@ public class ItemSystem : MonoBehaviour
         {
             case "Raygun":
                 GameObject raygun = Instantiate(equipped) as GameObject;
-                Transform right_arm = transform.FindChild("RightArm");
+                Transform right_arm = transform.Find("RightArm");
 
                 Vector3 pos = right_arm.position;
                 pos.x += .1f;
