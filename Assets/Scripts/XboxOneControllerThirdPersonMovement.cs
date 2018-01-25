@@ -1,16 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using Utility;
 
 public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 {
     public GameObject main_camera;
     public bool move = false;
+
     Rigidbody rb;
     Rotation rt;
 
     float movementSpeed = 100f;
     float jumpPower = 600f;
+
+    HashSet<string> aiming_items;
 
     Vector3 movement_direction = Vector3.zero;
     bool jump = false;
@@ -18,11 +22,16 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     AimingSystem aiming_system;
     ThirdPersonTargetingSystem tps;
+    ItemSystem its;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         tps = GetComponent<ThirdPersonTargetingSystem>();
+        its = GetComponent<ItemSystem>();
+
+        aiming_items = new HashSet<string>();
+        aiming_items.Add("Raygun");
     }
 
     void Awake()
@@ -38,11 +47,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             move = true;
         }
 
-        if (Input.GetAxis("RightTriggerAxis") == 0 && !tps.locked_on && move)
+        if ((Input.GetAxis("RightTriggerAxis") == 0 || 
+            (Input.GetAxis("RightTriggerAxis") > 0 && !aiming_items.Contains(its.equipped.name))) &&
+            !tps.locked_on && move)
         {
             CalculateFreeRoamRotation();
         }
-        else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on)
+        else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on
+            && aiming_items.Contains(its.equipped.name))
         {
             CalculateTargetingRotation(tps.direction);
         }

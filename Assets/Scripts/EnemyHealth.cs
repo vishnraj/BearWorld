@@ -38,7 +38,9 @@ public class EnemyHealth : MonoBehaviour
             UpdateHealthRemainingOnGUI();
 
         if (health <= 0) {
-            health_remaining.transform.SetParent(null);
+            if (health_remaining != null) {
+                health_remaining.transform.SetParent(null);
+            }
             Destroy(health_remaining);
             Destroy(gameObject);
         }

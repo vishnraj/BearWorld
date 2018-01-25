@@ -35,8 +35,7 @@ public class RaygunShooting : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetAxis("RightTriggerAxis") > 0 && !currently_firing)
-        {
+        if (Input.GetAxis("RightTriggerAxis") > 0 && !currently_firing) {
             firing = Fire();
             StartCoroutine(firing);
             currently_firing = true;

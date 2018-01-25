@@ -29,6 +29,11 @@ public class CameraController : MonoBehaviour
 
         if (Input.GetAxis("LeftTriggerAxis") == 0 && left_trigger_pressed)
         {
+            if (fc.targeting) {
+                transform.Rotate(-fc.target_rotation_x, 0, 0);
+                fc.targeting = false;
+            }
+
             xrc.enabled = true;
             fc.enabled = false;
 

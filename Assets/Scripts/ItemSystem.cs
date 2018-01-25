@@ -12,13 +12,14 @@ public class ItemSystem : MonoBehaviour
     public GameObject equipped;
     public GameObject current_ammo_type;
     public int current_ammo_amount;
-
     public GameObject HUD;
+
     Transform equipped_icon;
     Transform equipped_status;
     Transform ammo_icon;
     Transform ammo_remaining;
     Transform crosshair;
+    bool using_item = false;
 
     ThirdPersonTargetingSystem tps;
 
@@ -75,23 +76,43 @@ public class ItemSystem : MonoBehaviour
     {
         switch (equipped.name)
         {
-            case "Raygun":
-                GameObject raygun = Instantiate(equipped) as GameObject;
-                Transform right_arm = transform.Find("RightArm");
+            case "Raygun": {
+                    GameObject raygun = Instantiate(equipped) as GameObject;
+                    Transform right_arm = transform.Find("RightArm");
 
-                Vector3 pos = right_arm.position;
-                pos.x += .1f;
-                pos.y += .3f;
-                pos.z += .4f;
-                raygun.transform.position = pos;
+                    Vector3 pos = right_arm.position;
+                    pos.x += .1f;
+                    pos.y += .3f;
+                    pos.z += .4f;
+                    raygun.transform.position = pos;
 
-                raygun.transform.parent = right_arm;
+                    raygun.transform.parent = right_arm;
 
-                tps.current_weapon_range = 100.0f;
+                    tps.current_weapon_range = 100.0f;
 
-                crosshair.GetComponent<AimingSystem>().enabled = true;
+                    crosshair.GetComponent<AimingSystem>().enabled = true;
+                    using_item = true;
+                }
                 break;
+            case "Sword": {
+                    GameObject sword = Instantiate(equipped) as GameObject;
+                    Transform right_arm = transform.Find("RightArm");
 
+                    Vector3 pos = right_arm.position;
+                    pos.x += -.1f;
+                    pos.y += .02f;
+                    pos.z += .4f;
+                    sword.transform.position = pos;
+                    transform.Rotate(0, 75, 0);
+
+                    sword.transform.parent = right_arm;
+
+                    tps.current_weapon_range = 30.0f;
+
+                    crosshair.GetComponent<AimingSystem>().enabled = true;
+                    using_item = true;
+                }
+                break;
             default:
                 break;
         }
