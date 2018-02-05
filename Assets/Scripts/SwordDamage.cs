@@ -11,9 +11,13 @@ public class SwordDamage : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-         s = new Searching();
+         
     }
-	
+
+    private void Awake() {
+        s = new Searching();
+    }
+
     void OnTriggerEnter(Collider collide) {
         if (collide.tag == "Enemy" && attacking && !entered) {
             GameObject obj = s.FindComponentUpHierarchy<EnemyHealth>(collide.transform);
@@ -22,6 +26,15 @@ public class SwordDamage : MonoBehaviour {
                 // hashed to the normal amount that is lost for said body part
                 // until that body part is destroyed
                 obj.GetComponent<EnemyHealth>().health -= 1;
+                entered = true;
+            }
+        } else if (collide.tag == "Player" && attacking && !entered) {
+            GameObject obj = s.FindComponentUpHierarchy<PlayerHealth>(collide.transform);
+            if (obj != null) {
+                // eventually there can be a function in EnemyHealth that takes input of bodypart
+                // hashed to the normal amount that is lost for said body part
+                // until that body part is destroyed
+                obj.GetComponent<PlayerHealth>().health -= 1;
                 entered = true;
             }
         }

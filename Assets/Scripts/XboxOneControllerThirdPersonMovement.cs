@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using Utility;
 
@@ -8,36 +7,30 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     public GameObject main_camera;
     public bool move = false;
 
-    Rigidbody rb;
-    Rotation rt;
-
     float movementSpeed = 100f;
     float jumpPower = 600f;
-
-    HashSet<string> aiming_items;
-
     Vector3 movement_direction = Vector3.zero;
     bool jump = false;
     bool isGrounded = false;
 
-    AimingSystem aiming_system;
+    Rigidbody rb;
+    Rotation rt;
     ThirdPersonTargetingSystem tps;
     ItemSystem its;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        tps = GetComponent<ThirdPersonTargetingSystem>();
-        its = GetComponent<ItemSystem>();
-
-        aiming_items = new HashSet<string>();
-        aiming_items.Add("Raygun");
+        
     }
 
     void Awake()
     {
         rt = new Rotation();
         Physics.gravity = new Vector3(0, -18f, 0);
+        
+        rb = GetComponent<Rigidbody>();
+        tps = GetComponent<ThirdPersonTargetingSystem>();
+        its = GetComponent<ItemSystem>();
     }
 
     void Update()
@@ -48,13 +41,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
 
         if ((Input.GetAxis("RightTriggerAxis") == 0 || 
-            (Input.GetAxis("RightTriggerAxis") > 0 && !aiming_items.Contains(its.equipped.name))) &&
+            (Input.GetAxis("RightTriggerAxis") > 0 &&
+            its.equipped.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.MELEE)) &&
             !tps.locked_on && move)
         {
             CalculateFreeRoamRotation();
         }
         else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on
-            && aiming_items.Contains(its.equipped.name))
+            && its.equipped.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE)
         {
             CalculateTargetingRotation(tps.direction);
         }

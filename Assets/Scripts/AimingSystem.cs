@@ -16,6 +16,7 @@ public class AimingSystem : MonoBehaviour
     public Sprite target_reticle;
 
     ThirdPersonTargetingSystem tps;
+    BasicCharacter c;
     Searching search_tool;
 
     // Use this for initialization
@@ -23,6 +24,7 @@ public class AimingSystem : MonoBehaviour
     {
         range = tps.current_weapon_range;
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
+        c = player.GetComponent<BasicCharacter>();
         search_tool = new Searching();
     }
 

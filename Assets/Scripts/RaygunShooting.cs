@@ -1,76 +1,61 @@
 ﻿using UnityEngine;
 using System.Collections;
-using Utility;
 
-public class RaygunShooting : MonoBehaviour
+public class RaygunShooting : BasicWeapon
 {
-    public GameObject ray_blast;
     float fire_interval = 1.0f;
     bool currently_firing = false;
     IEnumerator firing;
 
-    GameObject player;
-    ItemSystem player_item_system;
-    ThirdPersonTargetingSystem tps;
+    GameObject character;
 
     // Use this for initialization
     void Start()
     {
-        if (transform.parent != null && transform.parent.transform.parent != null)
-        {
-            player = transform.parent.transform.parent.gameObject;
-            player_item_system = player.GetComponent<ItemSystem>();
-            tps = player.GetComponent<ThirdPersonTargetingSystem>();
-        }
 
-        if (player != null)
-        {
-            if (player_item_system.current_ammo_amount != 0)
-            {
-                ray_blast = player_item_system.current_ammo_type;
-            }
-        }
+    }
+
+    private void Awake() {
+        type = Weapon.WEAPON_TYPE.RANGE;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetAxis("RightTriggerAxis") > 0 && !currently_firing) {
-            firing = Fire();
-            StartCoroutine(firing);
-            currently_firing = true;
-        }
-        else if (Input.GetAxis("RightTriggerAxis") == 0 && currently_firing)
-        {
-            StopCoroutine(firing);
-            currently_firing = false;
-        }
+       
     }
 
     IEnumerator Fire()
     {
         while (true)
         {
-            if (player_item_system.current_ammo_amount != 0)
+            if (c.GetAmmoAmount() != 0)
             {
-                GameObject shot = Instantiate(ray_blast) as GameObject;
+                GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
+                RaygunShot s = shot.GetComponent<RaygunShot>();
+                s.SetOriginTag(c.tag);
+
                 Vector3 pos = transform.position;
                 shot.transform.position = pos;
 
-                if (tps.locked_on || tps.target != null)
-                {
-                    shot.GetComponent<RaygunShot>().SetDirection(tps.target.transform.position);
-                }
-                else
-                {
-                    shot.GetComponent<RaygunShot>().SetDirection(tps.direction);
-                }
+                s.SetDirection(c.GetTarget());
+                c.DecrementAmmoAmount();
 
-                player_item_system.current_ammo_amount -= 1;
-                player_item_system.UpdateAmmoAmountOnGUI();
+                s.enabled = true;
             }
 
             yield return new WaitForSeconds(fire_interval);
         }
+    }
+
+    public override void Attack() {
+        firing = Fire();
+        StartCoroutine(firing);
+        currently_firing = true;
+    }
+
+    public override void EndAttack() {
+        StopCoroutine(firing);
+        currently_firing = false;
     }
 }

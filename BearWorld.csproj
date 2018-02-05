@@ -85,6 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\AimingSystem.cs" />
+    <Compile Include="Assets\Scripts\BasicCharacter.cs" />
+    <Compile Include="Assets\Scripts\BasicPigAI.cs" />
+    <Compile Include="Assets\Scripts\BasicWeapon.cs" />
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\EnemyHealth.cs" />
     <Compile Include="Assets\Scripts\FixedCamera.cs" />
@@ -92,6 +95,7 @@
     <Compile Include="Assets\Scripts\KeyboardThirdPersonMovement.cs" />
     <Compile Include="Assets\Scripts\MouseRotatingCamera.cs" />
     <Compile Include="Assets\Scripts\PigFactory.cs" />
+    <Compile Include="Assets\Scripts\PlayerAttackController.cs" />
     <Compile Include="Assets\Scripts\PlayerHealth.cs" />
     <Compile Include="Assets\Scripts\RaygunShooting.cs" />
     <Compile Include="Assets\Scripts\RaygunShot.cs" />

@@ -31,8 +31,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     GameObject targeting_icon;
     Transform targeting_status;
     Transform crosshair;
+
     CloseCompare compare_distances;
     Rotation rt;
+    BasicCharacter c;
 
     // Use this for initialization
     void Start()
@@ -52,6 +54,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         sorted_targets = new SortedList(compare_distances);
 
         rt = new Rotation();
+        c = GetComponent<BasicCharacter>();
     }
 
     // Update is called once per frame
@@ -72,6 +75,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 {
                     can_lock_on = true;
                     UpdateTargetingStatus();
+                    c.SetTarget(target.transform.position);
                 }
                 else if (!locked_on)
                 {
@@ -138,6 +142,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             }
 
             UpdateTargetingStatus();
+            c.SetTarget(direction);
         }
     }
 

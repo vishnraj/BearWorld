@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using UnityStandardAssets.Utility;
 
 public class CameraController : MonoBehaviour
 {
@@ -12,6 +10,10 @@ public class CameraController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        
+    }
+
+    private void Awake() {
         fc = GetComponent<FixedCamera>();
         xrc = GetComponent<XboxOneControllerRotatingCamera>();
     }
@@ -29,11 +31,6 @@ public class CameraController : MonoBehaviour
 
         if (Input.GetAxis("LeftTriggerAxis") == 0 && left_trigger_pressed)
         {
-            if (fc.targeting) {
-                transform.Rotate(-fc.target_rotation_x, 0, 0);
-                fc.targeting = false;
-            }
-
             xrc.enabled = true;
             fc.enabled = false;
 

@@ -15,6 +15,8 @@ public class RaygunShot : MonoBehaviour
     Rigidbody rb;
     Searching s;
 
+    string origin_tag;
+
     // Use this for initialization
     void Start()
     {
@@ -46,9 +48,9 @@ public class RaygunShot : MonoBehaviour
 
     void OnTriggerEnter(Collider collide)
     {
-
-        if (collide.tag == "Enemy")
+        if (collide.tag == "Enemy" && collide.tag != origin_tag)
         {
+            Debug.Log("here");
             GameObject obj = s.FindComponentUpHierarchy<EnemyHealth>(collide.transform);
             if (obj != null)
             {
@@ -57,10 +59,20 @@ public class RaygunShot : MonoBehaviour
                 // until that body part is destroyed
                 obj.GetComponent<EnemyHealth>().health -= 1;
             }
+        } else if (collide.tag == "Player" && collide.tag != origin_tag) {
+            Debug.Log("here1");
+            GameObject obj = s.FindComponentUpHierarchy<PlayerHealth>(collide.transform);
+            if (obj != null) {
+                // eventually there can be a function in EnemyHealth that takes input of bodypart
+                // hashed to the normal amount that is lost for said body part
+                // until that body part is destroyed
+                obj.GetComponent<PlayerHealth>().health -= 1;
+            }
         }
 
-        if (collide.tag != "Weapon" && collide.tag != "Player" && collide.tag != "Ammunition")
+        if (collide.tag != "Weapon" && collide.tag != "Ammunition" && collide.tag != origin_tag)
         {
+            Debug.Log("here3");
             Destroy(gameObject);
         }
     }
@@ -70,5 +82,9 @@ public class RaygunShot : MonoBehaviour
         final_location = _direction;
         direction = (_direction - transform.position).normalized;
         fired = true;
+    }
+
+    public void SetOriginTag(string t) {
+        origin_tag = t;
     }
 }
