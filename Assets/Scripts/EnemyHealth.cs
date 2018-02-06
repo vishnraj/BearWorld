@@ -22,21 +22,27 @@ public class EnemyHealth : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
+        if (player != null) {
+            // This should all be event driven - detect if left trigger is held down
+            // if so, the event system will update the GUI to refelct the health of
+            // each enemy in the game
+
+            if (!player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
             health_remaining != null) {
-            health_remaining.transform.SetParent(null);
-            Destroy(health_remaining);
-            health_remaining = null;
-        } 
+                health_remaining.transform.SetParent(null);
+                Destroy(health_remaining);
+                health_remaining = null;
+            }
 
-        if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-            health_remaining == null)
-            CreateHealthRemainingOnGUI();
+            if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
+                health_remaining == null)
+                CreateHealthRemainingOnGUI();
 
-        if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on && 
-            health_remaining != null)
-            UpdateHealthRemainingOnGUI();
-
+            if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
+                health_remaining != null)
+                UpdateHealthRemainingOnGUI();
+        }
+        
         if (health <= 0) {
             if (health_remaining != null) {
                 health_remaining.transform.SetParent(null);

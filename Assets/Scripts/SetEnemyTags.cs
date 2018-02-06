@@ -6,6 +6,10 @@ public class SetEnemyTags : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+    
+    }
+
+    private void Awake() {
         SetChildrenTags(transform);
     }
 

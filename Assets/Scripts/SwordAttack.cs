@@ -3,10 +3,12 @@
 public class SwordAttack : BasicWeapon {
     GameObject character;
 
-    SwordDamage blade, tip;    
+    SwordDamage blade;
 
     bool equipped = false;
     bool attacking = false;
+
+    int current_sequence = 0;
 
     // Use this for initialization
     void Start() {
@@ -18,7 +20,6 @@ public class SwordAttack : BasicWeapon {
         }
 
         blade = transform.Find("Blade").GetComponent<SwordDamage>();
-        tip = transform.Find("Tip").GetComponent<SwordDamage>();
     }
 
     private void Awake() {
@@ -31,26 +32,34 @@ public class SwordAttack : BasicWeapon {
             blade.attacking = false;
         }
 
-        if (tip.attacking && tip.entered) {
-            tip.attacking = false;
-        }
-
-        if (attacking && !tip.entered && !blade.entered) {
-            blade.attacking = tip.attacking = true;
+        if (attacking && !blade.entered) {
+            blade.attacking = true;
         }
     }
 
     public override void Attack() {
-        transform.Rotate(0, 0, 90);
+        if (current_sequence == 0) {
+            transform.Rotate(0, 0, 90);
+        } else if (current_sequence == 1) {
+            transform.Rotate(0, 0, 90);
+        }
+
         attacking = true;
         blade.attacking = true;
-        tip.attacking = true;
     }
 
     public override void EndAttack() {
-        transform.Rotate(0, 0, -90);
+        if (current_sequence == 0) {
+            transform.Rotate(0, 0, -90);
+            transform.Rotate(-90, 0, 0);
+            current_sequence = 1;
+        } else if (current_sequence == 1) {
+            transform.Rotate(0, 0, -90);
+            transform.Rotate(90, 0, 0);
+            current_sequence = 0;
+        }
+
         attacking = false;
         blade.attacking = false;
-        tip.attacking = false;
     }
 }

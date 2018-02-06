@@ -40,15 +40,11 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             move = true;
         }
 
-        if ((Input.GetAxis("RightTriggerAxis") == 0 || 
-            (Input.GetAxis("RightTriggerAxis") > 0 &&
-            its.equipped.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.MELEE)) &&
-            !tps.locked_on && move)
+        if (Input.GetAxis("RightTriggerAxis") == 0  && !tps.locked_on && move)
         {
             CalculateFreeRoamRotation();
         }
-        else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on
-            && its.equipped.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE)
+        else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on)
         {
             CalculateTargetingRotation(tps.direction);
         }

@@ -59,10 +59,12 @@ public class AimingSystem : MonoBehaviour
 
     void OnEnable()
     {
-        tps = player.GetComponent<ThirdPersonTargetingSystem>();
-        range = tps.current_weapon_range;
-        crosshair.GetComponent<Image>().enabled = true;
-        SetDefaults();
+        if (player != null) {
+            tps = player.GetComponent<ThirdPersonTargetingSystem>();
+            range = tps.current_weapon_range;
+            crosshair.GetComponent<Image>().enabled = true;
+            SetDefaults();
+        }
     }
 
     void SetDefaults()

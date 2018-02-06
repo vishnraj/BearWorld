@@ -36,14 +36,16 @@ public class FixedCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        Weapon.WEAPON_TYPE type = player.GetComponent<ItemSystem>().equipped.GetComponent<BasicWeapon>().GetWeaponType();
-        switch (type) {
-            case Weapon.WEAPON_TYPE.MELEE:
-                UpdateNonAimingTargetingCamera();
-                break;
-            case Weapon.WEAPON_TYPE.RANGE:
-                UpdateAimingTargetingCamera();
-                break;
+        if (player != null) {
+            Weapon.WEAPON_TYPE type = player.GetComponent<ItemSystem>().equipped.GetComponent<BasicWeapon>().GetWeaponType();
+            switch (type) {
+                case Weapon.WEAPON_TYPE.MELEE:
+                    UpdateNonAimingTargetingCamera();
+                    break;
+                case Weapon.WEAPON_TYPE.RANGE:
+                    UpdateAimingTargetingCamera();
+                    break;
+            }
         }
     }
 

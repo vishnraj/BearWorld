@@ -8,12 +8,10 @@ public class BasicPigAI : MonoBehaviour {
     public GameObject player;
     public GameObject desired_ammo;
     public int desired_ammo_amount;
-    public int attacking_interval;
+    public float speed;
 
     BasicCharacter c;
     BasicWeapon w;
-
-    IEnumerator attacking;
 
     // Use this for initialization
     void Start () {
@@ -30,7 +28,8 @@ public class BasicPigAI : MonoBehaviour {
             pos.z += -.4f;
             raygun.transform.position = pos;
             raygun.transform.parent = right_arm;
-            raygun.transform.Rotate(0, -180, 0);
+            Vector3 direction = Vector3.RotateTowards(raygun.transform.forward, transform.forward, Mathf.PI, 0);
+            raygun.transform.rotation = Quaternion.LookRotation(direction);
 
             w = raygun.GetComponent<BasicWeapon>();
             w.SetCharacter(c);
@@ -38,22 +37,23 @@ public class BasicPigAI : MonoBehaviour {
             w.enabled = true;
         }
 
-        //attacking = Attack();
-        c.SetTarget(player.transform.position);
-        w.Attack();
-        //StartCoroutine(attacking);
+        if (player != null) {
+            c.SetTarget(player.transform.position);
+            w.Attack();
+        }
     }
 	
 	// Update is called once per frame
 	void Update () {
-        c.SetTarget(player.transform.position);
-        //w.Attack();
-    }
-
-    IEnumerator Attack() {
-        w.Attack();
-        w.EndAttack();
-
-        yield return new WaitForSeconds(attacking_interval);
+        if (player != null) {
+            c.SetTarget(player.transform.position);
+            Vector3 to_player = player.transform.position - transform.position;
+            Vector3 direction = Vector3.RotateTowards(transform.forward, to_player, Mathf.PI, 0);
+            transform.rotation = Quaternion.LookRotation(direction);
+            float step = speed * Time.deltaTime;
+            transform.position = Vector3.MoveTowards(transform.position, player.transform.position, step);
+        } else {
+            w.EndAttack();
+        }
     }
 }

@@ -35,7 +35,7 @@ public class RaygunShooting : BasicWeapon
                 RaygunShot s = shot.GetComponent<RaygunShot>();
                 s.SetOriginTag(c.tag);
 
-                Vector3 pos = transform.position;
+                Vector3 pos = transform.position + transform.forward;
                 shot.transform.position = pos;
 
                 s.SetDirection(c.GetTarget());

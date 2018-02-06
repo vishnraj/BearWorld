@@ -50,7 +50,6 @@ public class RaygunShot : MonoBehaviour
     {
         if (collide.tag == "Enemy" && collide.tag != origin_tag)
         {
-            Debug.Log("here");
             GameObject obj = s.FindComponentUpHierarchy<EnemyHealth>(collide.transform);
             if (obj != null)
             {
@@ -60,7 +59,6 @@ public class RaygunShot : MonoBehaviour
                 obj.GetComponent<EnemyHealth>().health -= 1;
             }
         } else if (collide.tag == "Player" && collide.tag != origin_tag) {
-            Debug.Log("here1");
             GameObject obj = s.FindComponentUpHierarchy<PlayerHealth>(collide.transform);
             if (obj != null) {
                 // eventually there can be a function in EnemyHealth that takes input of bodypart
@@ -70,9 +68,8 @@ public class RaygunShot : MonoBehaviour
             }
         }
 
-        if (collide.tag != "Weapon" && collide.tag != "Ammunition" && collide.tag != origin_tag)
+        if (collide.tag != "Ammunition" && collide.tag != origin_tag)
         {
-            Debug.Log("here3");
             Destroy(gameObject);
         }
     }

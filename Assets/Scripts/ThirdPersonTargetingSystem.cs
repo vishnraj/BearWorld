@@ -75,7 +75,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 {
                     can_lock_on = true;
                     UpdateTargetingStatus();
-                    c.SetTarget(target.transform.position);
                 }
                 else if (!locked_on)
                 {
@@ -126,6 +125,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             if ( locked_on && (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0) && switching )
             {
                 switching = false;
+            }
+
+            if (target != null) {
+                c.SetTarget(target.transform.position);
             }
         }
         else
