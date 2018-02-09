@@ -16,7 +16,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     Rigidbody rb;
     Rotation rt;
     ThirdPersonTargetingSystem tps;
-    ItemSystem its;
+    PlayerAttackController pac;
 
     void Start()
     {
@@ -30,7 +30,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         
         rb = GetComponent<Rigidbody>();
         tps = GetComponent<ThirdPersonTargetingSystem>();
-        its = GetComponent<ItemSystem>();
+        pac = GetComponent<PlayerAttackController>();
     }
 
     void Update()
@@ -40,23 +40,19 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             move = true;
         }
 
-        if (Input.GetAxis("RightTriggerAxis") == 0  && !tps.locked_on && move)
-        {
+        if (Input.GetAxis("RightTriggerAxis") == 0  && !tps.locked_on && move) {
             CalculateFreeRoamRotation();
-        }
-        else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on)
-        {
+        } else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on && !pac.enabled && move) {
+            CalculateFreeRoamRotation();
+        } else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on && pac.enabled) {
             CalculateTargetingRotation(tps.direction);
-        }
-        else if (tps.locked_on)
-        {
+        } else if (tps.locked_on) {
             //to account for race condition with target object and locked_on variables
             if (tps.target != null)
                 CalculateTargetingRotation(tps.target.transform.position);
         }
 
-        if (Input.GetButton("A") && isGrounded)
-        {
+        if (Input.GetButton("A") && isGrounded) {
             jump = true;
         }
     }
@@ -111,7 +107,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     {
         float theta_final = CalculateThirdPersonZXRotation();
 
-        if (Input.GetAxis("LeftTriggerAxis") > 0)
+        if (Input.GetAxis("LeftTriggerAxis") > 0 && pac.enabled)
         {
             movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
         }

@@ -91,6 +91,8 @@
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\EnemyHealth.cs" />
     <Compile Include="Assets\Scripts\FixedCamera.cs" />
+    <Compile Include="Assets\Scripts\HeldAmmo.cs" />
+    <Compile Include="Assets\Scripts\Inventory.cs" />
     <Compile Include="Assets\Scripts\ItemSystem.cs" />
     <Compile Include="Assets\Scripts\KeyboardThirdPersonMovement.cs" />
     <Compile Include="Assets\Scripts\MouseRotatingCamera.cs" />

@@ -15,12 +15,14 @@ public class FixedCamera : MonoBehaviour
 
     Rotation rt;
     ThirdPersonTargetingSystem tps;
+    PlayerAttackController pac;
 
     // Use this for initialization
     void Start()
     {
         // Ordered intialization
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
+        pac = player.GetComponent<PlayerAttackController>();
     }
 
     private void Awake() {
@@ -36,14 +38,17 @@ public class FixedCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        if (player != null) {
-            Weapon.WEAPON_TYPE type = player.GetComponent<ItemSystem>().equipped.GetComponent<BasicWeapon>().GetWeaponType();
+        if (player != null && pac.enabled) {
+            Weapon.WEAPON_TYPE type = pac.weapon.GetWeaponType();
             switch (type) {
                 case Weapon.WEAPON_TYPE.MELEE:
                     UpdateNonAimingTargetingCamera();
                     break;
                 case Weapon.WEAPON_TYPE.RANGE:
                     UpdateAimingTargetingCamera();
+                    break;
+                default:
+                    UpdateNonAimingTargetingCamera();
                     break;
             }
         }

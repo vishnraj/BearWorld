@@ -26,7 +26,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
     float margin_of_error = 5.0f;
-    float max_distance = 62.5f;
 
     GameObject targeting_icon;
     Transform targeting_status;
@@ -69,7 +68,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
             // capture target related
             Vector3 to_target = target.transform.position - transform.position;
-            if (Physics.Raycast(transform.position, to_target, out hit, max_distance, 1 << LayerMask.NameToLayer("Enemy_Layer")))
+            if (Physics.Raycast(transform.position, to_target, out hit, current_weapon_range, 1 << LayerMask.NameToLayer("Enemy_Layer")))
             {
                 if (target != null && !locked_on)
                 {
@@ -102,7 +101,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 crosshair.GetComponent<AimingSystem>().enabled = true;
             }
 
-            if (locked_on && to_target.magnitude <= max_distance)
+            if (locked_on && to_target.magnitude <= current_weapon_range)
             {
                 SetTargetOnGui();
             }

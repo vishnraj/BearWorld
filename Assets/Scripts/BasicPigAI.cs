@@ -6,8 +6,6 @@ public class BasicPigAI : MonoBehaviour {
     public GameObject desired_weapon;
     public GameObject equipped;
     public GameObject player;
-    public GameObject desired_ammo;
-    public int desired_ammo_amount;
     public float speed;
 
     BasicCharacter c;
@@ -16,20 +14,22 @@ public class BasicPigAI : MonoBehaviour {
     // Use this for initialization
     void Start () {
         c = GetComponent<BasicCharacter>();
-        c.SetAmmoType(desired_ammo);
-        c.SetAmmoAmount(desired_ammo_amount);
 
         if (desired_weapon != null) {
             GameObject raygun = Instantiate(desired_weapon) as GameObject;
+            Destroy(raygun.GetComponent<Rigidbody>());
+            Destroy(raygun.GetComponent<BoxCollider>());
             Transform right_arm = transform.Find("RightArm");
-            Vector3 pos = right_arm.position;
-            pos.x += 0f;
-            pos.y += .2f;
-            pos.z += -.4f;
+            Vector3 pos = right_arm.transform.position;
+            pos += right_arm.transform.forward * .3f;
+            pos += right_arm.transform.up * .2f;
             raygun.transform.position = pos;
             raygun.transform.parent = right_arm;
             Vector3 direction = Vector3.RotateTowards(raygun.transform.forward, transform.forward, Mathf.PI, 0);
             raygun.transform.rotation = Quaternion.LookRotation(direction);
+
+            c.SetAmmoType(raygun.GetComponent<HeldAmmo>().ammo_type);
+            c.SetAmmoAmount(raygun.GetComponent<HeldAmmo>().ammo_amount);
 
             w = raygun.GetComponent<BasicWeapon>();
             w.SetCharacter(c);

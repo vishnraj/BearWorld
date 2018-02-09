@@ -10,7 +10,6 @@ public class AimingSystem : MonoBehaviour
     public Camera cam;
     public GameObject player;
     public Ray ray;
-    public float range;
 
     public Sprite default_reticle;
     public Sprite target_reticle;
@@ -22,7 +21,6 @@ public class AimingSystem : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        range = tps.current_weapon_range;
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
         c = player.GetComponent<BasicCharacter>();
         search_tool = new Searching();
@@ -33,9 +31,9 @@ public class AimingSystem : MonoBehaviour
     {
         RaycastHit hit;
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
-        tps.direction = ray.GetPoint(range);
+        tps.direction = ray.GetPoint(tps.current_weapon_range);
 
-        if (Physics.Raycast(ray, out hit, range))
+        if (Physics.Raycast(ray, out hit, tps.current_weapon_range))
         {
             if (hit.collider.tag == "Enemy" && !tps.locked_on)
             {
@@ -61,10 +59,13 @@ public class AimingSystem : MonoBehaviour
     {
         if (player != null) {
             tps = player.GetComponent<ThirdPersonTargetingSystem>();
-            range = tps.current_weapon_range;
             crosshair.GetComponent<Image>().enabled = true;
             SetDefaults();
         }
+    }
+
+    private void OnDisable() {
+        crosshair.GetComponent<Image>().enabled = false;
     }
 
     void SetDefaults()

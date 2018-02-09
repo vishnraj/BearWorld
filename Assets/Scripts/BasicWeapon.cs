@@ -8,6 +8,8 @@ namespace Weapon {
 }
 
 public abstract class BasicWeapon : MonoBehaviour {
+    public float range;
+
     protected Weapon.WEAPON_TYPE type;
     protected BasicCharacter c;
 
