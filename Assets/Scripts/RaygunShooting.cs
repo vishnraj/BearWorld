@@ -7,12 +7,10 @@ public class RaygunShooting : BasicWeapon
     bool currently_firing = false;
     IEnumerator firing;
 
-    GameObject character;
-
     // Use this for initialization
     void Start()
     {
-
+        Init();
     }
 
     private void Awake() {
@@ -38,7 +36,7 @@ public class RaygunShooting : BasicWeapon
                 Vector3 pos = transform.position + transform.forward;
                 shot.transform.position = pos;
 
-                s.SetDirection(c.GetTarget());
+                s.SetDirection(c.GetTarget(), range);
                 c.DecrementAmmoAmount();
 
                 s.enabled = true;

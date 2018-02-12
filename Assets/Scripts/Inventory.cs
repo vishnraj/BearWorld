@@ -50,6 +50,7 @@ public class Inventory : MonoBehaviour {
     PlayerAttackController pac;
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
+    Weapon.WeaponFactory f;
 
     // Use this for initialization
     private void Start() {
@@ -61,6 +62,7 @@ public class Inventory : MonoBehaviour {
         tps = GetComponent<ThirdPersonTargetingSystem>();
         pac = GetComponent<PlayerAttackController>();
         c = GetComponent<BasicCharacter>();
+        f = new Weapon.WeaponFactory();
 
         equipped_icon = HUD.transform.Find("EquippedIcon");
         equipped_status = HUD.transform.Find("EquippedStatus");
@@ -93,13 +95,10 @@ public class Inventory : MonoBehaviour {
         equip_item();
         unequip_item();
         drop_item();
+        update_equipped();
 
-        // Status of the equipped
-        if ((equipped == null && desired_equipped != "") || (equipped != null && desired_equipped != equipped.name)) { 
-            update_equipped();
-        }
-
-        // Status of other parts of player
+        // Update states of other parts of player
+        // and the equipped depending on state of this component
         if (item_menu_on == true) {
             if (GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
                 GetComponent<XboxOneControllerThirdPersonMovement>().enabled = false;
@@ -127,22 +126,8 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    // Disabling this for now, we get issues when calling
-    // both on OnTriggerStay and OnTriggerEnter - race
-    // condiition, although strange because game loop
-    // should be single threaded, with this getting
-    // called first and stay after, but this call seems
-    // to invalidate the stay call, breaking the game
-    //private void OnTriggerEnter(Collider other) {
-    //    GameObject item = other.gameObject;
-    //    if (item != null && item.GetComponent<BasicWeapon>() != null) {
-    //        pick_up(item);
-    //    }
-    //}
-
-
-    private void OnTriggerStay(Collider other) {
-        GameObject item = other.gameObject;
+    private void OnCollisionStay(Collision collision) {
+        GameObject item = collision.collider.gameObject;
         if (item != null && item.GetComponent<BasicWeapon>() != null) {
             pick_up(item);
         }
@@ -441,33 +426,18 @@ public class Inventory : MonoBehaviour {
     }
 
     public void update_equipped() {
-        switch (desired_equipped) {
-            case "Raygun": {
-                    GameObject raygun = Instantiate(Resources.Load("Prefabs/" + desired_equipped)) as GameObject;
-                    DefaultInitEquipped(raygun);
-
-                    tps.current_weapon_range = raygun.GetComponent<BasicWeapon>().range;
-                    equipped = raygun;
-                }
-                break;
-            case "Sword": {
-                    GameObject sword = Instantiate(Resources.Load("Prefabs/" + desired_equipped)) as GameObject;
-                    DefaultInitEquipped(sword);
-
-                    sword.transform.Rotate(0, 90, 0);
-                    tps.current_weapon_range = sword.GetComponent<BasicWeapon>().range;
-                    equipped = sword;
-                }
-                break;
-            default: {
-                    equipped = null;
-                    crosshair.GetComponent<AimingSystem>().enabled = false;
-                }
-                break;
-        }
-
+        // Set up the new equipped
         // Update GUI elements (later through event system)
-        if (equipped != null) {
+        if ((desired_equipped != "" && equipped == null) || (desired_equipped != "" && equipped != null && desired_equipped != equipped.name)) {
+            if (equipped != null) {
+                Destroy(equipped);
+            }
+
+            Transform right_arm = transform.Find("RightArm");
+            equipped = f.SpawnEquipped(desired_equipped, right_arm, c);
+
+            tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
+
             equipped_status.gameObject.GetComponent<Text>().text = equipped.name + " equipped";
             equipped_status.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
 
@@ -475,6 +445,10 @@ public class Inventory : MonoBehaviour {
             new Rect(0, 0, 128, 128), new Vector2());
 
             crosshair.GetComponent<AimingSystem>().enabled = true;
+        } else if (desired_equipped == "" && equipped != null) {
+            Destroy(equipped);
+            equipped = null;
+            crosshair.GetComponent<AimingSystem>().enabled = false;
         }
     }
 
@@ -510,20 +484,6 @@ public class Inventory : MonoBehaviour {
     void DeactivateItem() {
         pac.weapon.enabled = false;
         pac.enabled = false;
-    }
-
-    void DefaultInitEquipped(GameObject new_equipped) {
-        new_equipped.name = new_equipped.name.Substring(0, new_equipped.name.LastIndexOf("("));
-        Destroy(new_equipped.GetComponent<Rigidbody>());
-        Destroy(new_equipped.GetComponent<BoxCollider>());
-        Transform right_arm = transform.Find("RightArm");
-        Vector3 pos = right_arm.transform.position;
-        pos += right_arm.transform.forward * .3f;
-        pos += right_arm.transform.up * .2f;
-        new_equipped.transform.position = pos;
-        new_equipped.transform.parent = right_arm;
-        Vector3 direction = Vector3.RotateTowards(new_equipped.transform.forward, transform.forward, Mathf.PI, 0);
-        new_equipped.transform.rotation = Quaternion.LookRotation(direction);
     }
 }
 

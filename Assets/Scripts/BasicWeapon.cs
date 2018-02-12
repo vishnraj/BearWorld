@@ -3,8 +3,27 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Weapon {
-    public abstract class WeaponInfo {}
+    public abstract class WeaponInfo { }
     public enum WEAPON_TYPE { RANGE, MELEE }
+
+    class WeaponFactory {
+        // (kind of a) Factory function
+        public GameObject SpawnEquipped(string desired_equipped, Transform _parent, BasicCharacter c) {
+            GameObject equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), _parent.position, _parent.rotation) as GameObject;
+            equipped.transform.parent = _parent;
+            equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
+            Object.Destroy(equipped.GetComponent<Rigidbody>());
+            Object.Destroy(equipped.GetComponent<BoxCollider>());
+
+            // special cases
+            if (equipped.GetComponent<HeldAmmo>() != null) {
+                c.SetAmmoType(equipped.GetComponent<HeldAmmo>().ammo_type);
+                c.SetAmmoAmount(equipped.GetComponent<HeldAmmo>().ammo_amount);
+            }
+
+            return equipped;
+        }
+    }
 }
 
 public abstract class BasicWeapon : MonoBehaviour {
@@ -25,6 +44,18 @@ public abstract class BasicWeapon : MonoBehaviour {
 
     public virtual void Attack() { }
     public virtual void EndAttack() { }
+
+    protected virtual void Init() {
+        if (transform.parent == null) {
+            Debug.Log("Error, weapon not assigned to parent.");
+            return;
+        }
+
+        Vector3 pos = transform.position;
+        pos += transform.forward * .3f;
+        pos += transform.up * .2f;
+        transform.position = pos;
+    }
 
     public Weapon.WEAPON_TYPE GetWeaponType() { return type; }
     public void SetCharacter(BasicCharacter character) { c = character; }

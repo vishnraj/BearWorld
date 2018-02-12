@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Utility;
 
-public class SwordDamage : MonoBehaviour {
+public class SwordDamage : DamageDealer {
     public bool attacking = false;
     public bool entered = false;
-
-    Searching s;
 
     // Use this for initialization
     void Start () {
@@ -15,34 +13,13 @@ public class SwordDamage : MonoBehaviour {
     }
 
     private void Awake() {
-        s = new Searching();
+
     }
 
-    void OnTriggerEnter(Collider collide) {
-        if (collide.tag == "Enemy" && attacking && !entered) {
-            GameObject obj = s.FindComponentUpHierarchy<EnemyHealth>(collide.transform);
-            if (obj != null) {
-                // eventually there can be a function in EnemyHealth that takes input of bodypart
-                // hashed to the normal amount that is lost for said body part
-                // until that body part is destroyed
-                obj.GetComponent<EnemyHealth>().health -= 1;
-                entered = true;
-            }
-        } else if (collide.tag == "Player" && attacking && !entered) {
-            GameObject obj = s.FindComponentUpHierarchy<PlayerHealth>(collide.transform);
-            if (obj != null) {
-                // eventually there can be a function in EnemyHealth that takes input of bodypart
-                // hashed to the normal amount that is lost for said body part
-                // until that body part is destroyed
-                obj.GetComponent<PlayerHealth>().health -= 1;
-                entered = true;
-            }
-        }
-    }
-
-    void OnTriggerExit(Collider collide) {
-        if (collide.tag == "Enemy" && entered) {
-            entered = false;
-        }
+    public override float DealDamage(float health) {
+        health -= 3;
+        entered = true;
+        
+        return health;
     }
 }

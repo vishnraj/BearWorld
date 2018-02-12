@@ -86,9 +86,11 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\AimingSystem.cs" />
     <Compile Include="Assets\Scripts\BasicCharacter.cs" />
+    <Compile Include="Assets\Scripts\BasicHealth.cs" />
     <Compile Include="Assets\Scripts\BasicPigAI.cs" />
     <Compile Include="Assets\Scripts\BasicWeapon.cs" />
     <Compile Include="Assets\Scripts\CameraController.cs" />
+    <Compile Include="Assets\Scripts\DamageDealer.cs" />
     <Compile Include="Assets\Scripts\EnemyHealth.cs" />
     <Compile Include="Assets\Scripts\FixedCamera.cs" />
     <Compile Include="Assets\Scripts\HeldAmmo.cs" />

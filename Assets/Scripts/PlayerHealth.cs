@@ -3,10 +3,9 @@ using UnityEngine.UI;
 using UnityEditor;
 using System.Collections;
 
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : BasicHealth
 {
     public GameObject player;
-    public float health;
 
     public GameObject HUD;
     Transform player_icon;
@@ -30,11 +29,6 @@ public class PlayerHealth : MonoBehaviour
     void Update()
     {
         UpdateHealthRemainingOnGUI();
-
-        if (health <= 0)
-        {
-            Destroy(gameObject);
-        }
     }
 
     public void UpdateHealthRemainingOnGUI()

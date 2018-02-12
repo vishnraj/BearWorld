@@ -3,11 +3,10 @@ using UnityEngine.UI;
 using UnityEditor;
 using System.Collections;
 
-public class EnemyHealth : MonoBehaviour
+public class EnemyHealth : BasicHealth
 {
     GameObject HUD;
     GameObject player;
-    public float health = 10;
     GameObject health_remaining;
 
     // Use this for initialization

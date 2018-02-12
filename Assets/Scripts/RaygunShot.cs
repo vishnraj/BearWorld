@@ -2,26 +2,23 @@
 using System.Collections;
 using Utility;
 
-public class RaygunShot : MonoBehaviour
-{
-    float shot_speed = 50.0f;
+public class RaygunShot : DamageDealer {
+    public float shot_speed;
+    public float interval_before_destruction;
+    public float start_distance_before_destruction;
+
     bool fired = false;
     bool expired = false;
     float start_time_of_destruction = 0.0f;
-    float interval_before_destruction = .5f;
 
     Vector3 final_location;
     Vector3 direction;
     Rigidbody rb;
-    Searching s;
-
-    string origin_tag;
 
     // Use this for initialization
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        s = new Searching();
     }
 
     // Update is called once per frame
@@ -31,7 +28,7 @@ public class RaygunShot : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        else if (fired && !expired && Vector3.Magnitude(final_location - gameObject.transform.position) <= 5.0f)
+        else if (fired && !expired && Vector3.Magnitude(final_location - transform.position) <= start_distance_before_destruction)
         {
             expired = true;
             start_time_of_destruction = Time.time;
@@ -48,40 +45,22 @@ public class RaygunShot : MonoBehaviour
 
     void OnTriggerEnter(Collider collide)
     {
-        if (collide.tag == "Enemy" && collide.tag != origin_tag)
-        {
-            GameObject obj = s.FindComponentUpHierarchy<EnemyHealth>(collide.transform);
-            if (obj != null)
-            {
-                // eventually there can be a function in EnemyHealth that takes input of bodypart
-                // hashed to the normal amount that is lost for said body part
-                // until that body part is destroyed
-                obj.GetComponent<EnemyHealth>().health -= 1;
-            }
-        } else if (collide.tag == "Player" && collide.tag != origin_tag) {
-            GameObject obj = s.FindComponentUpHierarchy<PlayerHealth>(collide.transform);
-            if (obj != null) {
-                // eventually there can be a function in EnemyHealth that takes input of bodypart
-                // hashed to the normal amount that is lost for said body part
-                // until that body part is destroyed
-                obj.GetComponent<PlayerHealth>().health -= 1;
-            }
-        }
-
         if (collide.tag != "Ammunition" && collide.tag != origin_tag)
         {
             Destroy(gameObject);
         }
     }
 
-    public void SetDirection(Vector3 _direction)
-    {
-        final_location = _direction;
+    public void SetDirection(Vector3 _direction, float range) {
         direction = (_direction - transform.position).normalized;
+        // should be the range distance in front of the transform that
+        // fired the object in the direction that the shot was fired
+        final_location = direction * range + transform.position;
         fired = true;
     }
 
-    public void SetOriginTag(string t) {
-        origin_tag = t;
+    public override float DealDamage(float health) {
+        health -= 1;
+        return health;
     }
 }

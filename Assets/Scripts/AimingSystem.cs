@@ -9,7 +9,11 @@ public class AimingSystem : MonoBehaviour
     public GameObject crosshair;
     public Camera cam;
     public GameObject player;
-    public Ray ray;
+
+    // This is hard coded, it just guarantees
+    // that the part of the ray used to set direction
+    // is in front of the player
+    float in_front_of = 70.0f;
 
     public Sprite default_reticle;
     public Sprite target_reticle;
@@ -30,22 +34,23 @@ public class AimingSystem : MonoBehaviour
     void Update()
     {
         RaycastHit hit;
+        Ray ray;
+        // the ray needs to be from wherever is in the current view to object
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
-        tps.direction = ray.GetPoint(tps.current_weapon_range);
+        tps.direction = ray.GetPoint(in_front_of);
 
-        if (Physics.Raycast(ray, out hit, tps.current_weapon_range))
+        if (Physics.Raycast(ray, out hit) && hit.collider.tag == "Enemy")
         {
-            if (hit.collider.tag == "Enemy" && !tps.locked_on)
-            {
+            Vector3 direction = player.transform.position - hit.transform.position;
+
+            if (direction.magnitude <= tps.current_weapon_range) {
+                if (!tps.locked_on) {
+                    // changing state of objects should rely on message passing
+                    tps.target = search_tool.FindComponentUpHierarchy<EnemyHealth>(hit.collider.gameObject.transform);
+                }
+
                 crosshair.GetComponent<Image>().sprite = target_reticle;
-                tps.target = search_tool.FindComponentUpHierarchy<EnemyHealth>(hit.collider.gameObject.transform);
-            }
-            else if (hit.collider.tag == "Enemy" && tps.locked_on)
-            {
-                crosshair.GetComponent<Image>().sprite = target_reticle;
-            }
-            else
-            {
+            } else {
                 SetDefaults();
             }
         }
