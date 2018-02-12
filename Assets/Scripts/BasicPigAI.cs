@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class BasicPigAI : MonoBehaviour {
     public string desired_equipped;
+    public GameObject desired_ammo;
+    public int desired_ammo_amount;
+
     public GameObject equipped;
     public GameObject target;
     public float speed;
@@ -19,7 +22,10 @@ public class BasicPigAI : MonoBehaviour {
 
         if (desired_equipped != null) {
             Transform right_arm = transform.Find("RightArm");
-            equipped = f.SpawnEquipped(desired_equipped, right_arm, c);
+            equipped = f.SpawnEquipped(desired_equipped, right_arm);
+
+            c.SetAmmoType(desired_ammo);
+            c.SetAmmoAmount(desired_ammo_amount);
 
             w = equipped.GetComponent<BasicWeapon>();
             w.SetCharacter(c);
@@ -28,7 +34,7 @@ public class BasicPigAI : MonoBehaviour {
 
         if (target != null) {
             c.SetTarget(target.transform.position);
-            //w.Attack();
+            w.Attack();
         }
     }
 	
@@ -40,7 +46,7 @@ public class BasicPigAI : MonoBehaviour {
             Vector3 direction = Vector3.RotateTowards(transform.forward, to_target, Mathf.PI, 0);
             transform.rotation = Quaternion.LookRotation(direction);
             float step = speed * Time.deltaTime;
-            //transform.position = Vector3.MoveTowards(transform.position, player.transform.position, step);
+            transform.position = Vector3.MoveTowards(transform.position, target.transform.position, step);
         } else {
             w.EndAttack();
         }

@@ -8,18 +8,18 @@ namespace Weapon {
 
     class WeaponFactory {
         // (kind of a) Factory function
-        public GameObject SpawnEquipped(string desired_equipped, Transform _parent, BasicCharacter c) {
+        public GameObject SpawnEquipped(string desired_equipped, Transform _parent) {
             GameObject equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), _parent.position, _parent.rotation) as GameObject;
             equipped.transform.parent = _parent;
-            equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
+            if (equipped.name.Contains(" ")) {
+                equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf(" "));
+            } else if (equipped.name.Contains("(")) {
+                equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
+            }
+            
+            
             Object.Destroy(equipped.GetComponent<Rigidbody>());
             Object.Destroy(equipped.GetComponent<BoxCollider>());
-
-            // special cases
-            if (equipped.GetComponent<HeldAmmo>() != null) {
-                c.SetAmmoType(equipped.GetComponent<HeldAmmo>().ammo_type);
-                c.SetAmmoAmount(equipped.GetComponent<HeldAmmo>().ammo_amount);
-            }
 
             return equipped;
         }

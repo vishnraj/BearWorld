@@ -201,8 +201,9 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 		//Debug.Log("current_joystick_angle: " + current_joystick_angle);
 
         sorted_targets.Clear();
-		for (int i = 0; i < Enemies.transform.childCount; ++i) {
-			GameObject current_enemy = Enemies.transform.GetChild(i).gameObject;
+        List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().enemies;
+        for (int i = 0; i < enemies.Count; ++i) {
+			GameObject current_enemy = enemies[i];
 
 			// here we will remove enemies from consideration, if, after being normalized to
 			// an x and y (really z and x) pair that is in the player's axis, they are not

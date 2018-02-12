@@ -141,10 +141,13 @@ public class Inventory : MonoBehaviour {
         }
 
         if (Input.GetButtonDown("X")) {
-            if (inventory.Count < max_items && !inventory.Contains(item.name)) {
-                if (item.name.Contains("("))
-                    item.name = item.name.Substring(0, item.name.LastIndexOf("("));
+            if (item.name.Contains(" ")) {
+                item.name = item.name.Substring(0, item.name.LastIndexOf(" "));
+            } else if (item.name.Contains("(")) {
+                item.name = item.name.Substring(0, item.name.LastIndexOf("("));
+            }
 
+            if (inventory.Count < max_items && !inventory.Contains(item.name)) {
                 inventory.Add(item.name);
 
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
@@ -154,7 +157,7 @@ public class Inventory : MonoBehaviour {
             } else if (inventory.Contains(item.name)) {
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
-                    if (item.name != equipped.name) {
+                    if ((equipped == null) || (equipped != null && item.name != equipped.name)) {
                         ammo_inventory[item.name].ammo_amount += ammo.ammo_amount;
                     } else {
                         ammo_inventory[item.name].ammo_amount = c.GetAmmoAmount() + ammo.ammo_amount;
@@ -252,14 +255,14 @@ public class Inventory : MonoBehaviour {
     }
 
     private void toggle_item_menu() {
-        if (Input.GetButtonDown("Y") && !item_menu_on) {
+        if (Input.GetButtonDown("Start") && !item_menu_on) {
             Time.timeScale = 0; // pause game upon entering
                                 // menu
 
             display_items();
             select_item_on_menu();
             item_menu_on = true;
-        } else if (Input.GetButtonDown("Y") && item_menu_on) {
+        } else if (Input.GetButtonDown("Start") && item_menu_on) {
             foreach (GameObject g in menu_objects) {
                 Destroy(g);
             }
@@ -434,7 +437,7 @@ public class Inventory : MonoBehaviour {
             }
 
             Transform right_arm = transform.Find("RightArm");
-            equipped = f.SpawnEquipped(desired_equipped, right_arm, c);
+            equipped = f.SpawnEquipped(desired_equipped, right_arm);
 
             tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
 
