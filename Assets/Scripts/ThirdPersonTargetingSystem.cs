@@ -17,15 +17,17 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     public GameObject HUD;
     public GameObject Enemies;
     public Camera main_camera;
-    public SortedList sorted_targets; // targets sorted by closest distance to current target
-                                      // as well as closeness of the angle of the vector to new target
-                                      // to the angle created by the joystick's coordinates
-                                      // if there is a target, otherwise just sorts using InstanceIDs
-                                      // in ascending order
+    public SortedList sorted_by_chosen_direction; // targets sorted by closest distance to current target
+                                                  // as well as closeness of the angle of the vector to new target
+                                                  // to the angle created by the joystick's coordinates
+                                                  // if there is a target, otherwise just sorts using InstanceIDs
+                                                  // in ascending order
     float input_x = 0.0f;
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
     float margin_of_error = 5.0f;
+
+    Vector3 previous_target_pos;
 
     GameObject targeting_icon;
     Transform targeting_status;
@@ -47,10 +49,12 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         float desired_scale = .4f;
 
+        previous_target_pos = new Vector3();
+
         targeting_icon.GetComponent<Image>().transform.localScale = new Vector3(desired_scale, desired_scale, desired_scale);
 
         compare_distances = new CloseCompare(this);
-        sorted_targets = new SortedList(compare_distances);
+        sorted_by_chosen_direction = new SortedList(compare_distances);
 
         rt = new Rotation();
         c = GetComponent<BasicCharacter>();
@@ -62,7 +66,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         RaycastHit hit;
         if (target != null)
         {
-            // on case not handled here is when the target is in range
+            // This all needs to be handled via  state class
+            // because this has become unruly garbage
+
+            // one case not handled here is when the target is in range
             // but will be off screen when the player locks on
             // to the target
 
@@ -107,11 +114,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             }
             else
             {
-                can_lock_on = false;
-                locked_on = false;
-                crosshair.GetComponent<AimingSystem>().enabled = true;
-                targeting_icon.GetComponent<Image>().enabled = false;
-                targeting_icon.transform.SetParent(null);
+                DisableLockedOn();
             }
 
             // user input related
@@ -128,24 +131,59 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
             if (target != null) {
                 c.SetTarget(target.transform.position);
+                previous_target_pos = target.transform.position;
             }
         }
         else
         {
-            can_lock_on = false;
-            switching = false;
+            // This type of behavior needs to be divided
+            // up into states for when locked on vs not locked on
+            if (locked_on) {
+                Enemies.GetComponent<EnemyTracker>().enemies.RemoveAll(item => item == null);
+                List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().enemies;
+                target = GetClosestEnemy(enemies);
 
-            if (locked_on)
-            {
-                locked_on = false;
-                crosshair.GetComponent<AimingSystem>().enabled = true;
-                targeting_icon.GetComponent<Image>().enabled = false;
-                targeting_icon.transform.SetParent(null);
+                if (target != null) {
+                    Vector3 to_target = target.transform.position - transform.position;
+                    if (to_target.magnitude <= current_weapon_range) {
+                        c.SetTarget(target.transform.position);
+                        SetTargetOnGui();
+                    } else {
+                        DisableLockedOn();
+                    }
+                } else {
+                    DisableLockedOn();
+                }
+            } else {
+                DisableLockedOn();
             }
-
-            UpdateTargetingStatus();
-            c.SetTarget(direction);
         }
+    }
+
+    GameObject GetClosestEnemy(List<GameObject> enemies) {
+        GameObject g_min = null;
+        float min_dist = Mathf.Infinity;
+        foreach (GameObject g in enemies) {
+            float dist = Vector3.Distance(g.transform.position, previous_target_pos);
+            if (dist < min_dist) {
+                g_min = g;
+                min_dist = dist;
+            }
+        }
+        return g_min;
+    }
+
+    void DisableLockedOn() {
+        locked_on = false;
+        can_lock_on = false;
+        switching = false;
+
+        crosshair.GetComponent<AimingSystem>().enabled = true;
+        targeting_icon.GetComponent<Image>().enabled = false;
+        targeting_icon.transform.SetParent(null);
+
+        UpdateTargetingStatus();
+        c.SetTarget(direction);
     }
 
     void UpdateTargetingStatus()
@@ -200,7 +238,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 		current_joystick_angle = rt.CalculateZXRotation(new Vector3(input_x, 0, input_y));
 		//Debug.Log("current_joystick_angle: " + current_joystick_angle);
 
-        sorted_targets.Clear();
+        sorted_by_chosen_direction.Clear();
+        // pretty sure gameloop is single threaded, so we can modify this safely
+        // basically if enemy tracker sees the change first it will, otherwise this will
+        Enemies.GetComponent<EnemyTracker>().enemies.RemoveAll(item => item == null);
         List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().enemies;
         for (int i = 0; i < enemies.Count; ++i) {
 			GameObject current_enemy = enemies[i];
@@ -235,15 +276,15 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             if (current_enemy.GetInstanceID() != target.GetInstanceID() &&
                 (ret.x > 0 && ret.x < 1) && (ret.y > 0 && ret.y < 1)) 
             {
-                sorted_targets.Add(current_enemy, current_enemy.GetInstanceID());
+                sorted_by_chosen_direction.Add(current_enemy, current_enemy.GetInstanceID());
             }
         }
 
-        //Debug.Log("Sorted targets count: " + sorted_targets.Count);
+        //Debug.Log("Sorted targets count: " + sorted_by_chosen_direction.Count);
 
         try {
-            //Debug.Log("Selected Target ID: " + sorted_targets.GetByIndex(0));
-			new_target = (GameObject)sorted_targets.GetKey(0);
+            //Debug.Log("Selected Target ID: " + sorted_by_chosen_direction.GetByIndex(0));
+			new_target = (GameObject)sorted_by_chosen_direction.GetKey(0);
 
 			Vector3 player_forward = new Vector3(transform.forward.x, 0, transform.forward.z);
 

@@ -126,6 +126,13 @@ public class Inventory : MonoBehaviour {
         }
     }
 
+    private void OnCollisionEnter(Collision collision) {
+        GameObject item = collision.collider.gameObject;
+        if (item != null && item.GetComponent<BasicWeapon>() != null) {
+            pick_up(item);
+        }
+    }
+
     private void OnCollisionStay(Collision collision) {
         GameObject item = collision.collider.gameObject;
         if (item != null && item.GetComponent<BasicWeapon>() != null) {
