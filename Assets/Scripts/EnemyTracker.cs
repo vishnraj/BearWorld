@@ -2,7 +2,7 @@
 using UnityEngine;
 
 public class EnemyTracker : MonoBehaviour {
-    public List<GameObject> enemies;
+    List<GameObject> enemies;
 
 	// Use this for initialization
 	void Start () {
@@ -15,6 +15,18 @@ public class EnemyTracker : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-        enemies.RemoveAll(item => item == null);
+        
+    }
+    
+    public void RemoveEnemy(GameObject enemy) {
+        enemies.Remove(enemy);
+    }
+
+    public void AddEnemy(GameObject enemy) {
+        enemies.Add(enemy);
+    }
+
+    public List<GameObject> GetAllEnemies() {
+        return enemies;
     }
 }

@@ -1,28 +1,28 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class BasicBuilding : MonoBehaviour {
+public class CompositeEnemy : MonoBehaviour {
     public GameObject enemies;
     
-    public List<GameObject> windows;
+    public List<GameObject> contained_enemies;
 
 	// Use this for initialization
 	void Start () {
-        windows = new List<GameObject>();
+        contained_enemies = new List<GameObject>();
 
         for (int i = 0; i < transform.childCount; ++i) {
             Transform child = transform.GetChild(i);
             if (child.name.Contains("Window")) {
-                windows.Add(child.gameObject);
-                enemies.GetComponent<EnemyTracker>().enemies.Add(child.gameObject);
+                contained_enemies.Add(child.gameObject);
+                enemies.GetComponent<EnemyTracker>().AddEnemy(child.gameObject);
             }
         }
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        windows.RemoveAll(item => item == null);
-        if (windows.Count == 0) {
+        contained_enemies.RemoveAll(item => item == null);
+        if (contained_enemies.Count == 0) {
             Destroy(gameObject);
         }
     }

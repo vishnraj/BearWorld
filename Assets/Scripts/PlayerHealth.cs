@@ -23,12 +23,14 @@ public class PlayerHealth : BasicHealth
         UpdateHealthRemainingOnGUI();
     }
 
-
-
     // Update is called once per frame
     void Update()
     {
         UpdateHealthRemainingOnGUI();
+
+        if (health <= 0) {
+            Destroy(gameObject);
+        }
     }
 
     public void UpdateHealthRemainingOnGUI()

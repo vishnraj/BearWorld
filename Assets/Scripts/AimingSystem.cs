@@ -76,10 +76,6 @@ public class AimingSystem : MonoBehaviour
     void SetDefaults()
     {
         crosshair.GetComponent<Image>().sprite = default_reticle;
-
-        if (!tps.locked_on)
-        {
-            tps.target = null;
-        }
+        tps.target = null;
     }
 }

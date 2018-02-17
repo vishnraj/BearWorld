@@ -24,7 +24,7 @@ public class Inventory : MonoBehaviour {
 
     public string desired_equipped;
 
-    public GameObject equipped;
+    public GameObject equipped = null;
 
     public GameObject HUD;
     public GameObject none;
@@ -331,10 +331,6 @@ public class Inventory : MonoBehaviour {
             if (inventory.Count != 0 && current_inventory_index < inventory.Count) {
                 desired_equipped = inventory[current_inventory_index];
                 desired_equipped_index = current_inventory_index;
-
-                if (equipped != null && desired_equipped != equipped.name) {
-                    Destroy(equipped);
-                }
             }
 
             set_ammo_type(desired_equipped);
@@ -364,7 +360,6 @@ public class Inventory : MonoBehaviour {
 
         if (Input.GetButtonDown("B")) {
             desired_equipped = "";
-            Destroy(equipped);
             set_ammo_none();
             set_equipped_none();
         }
@@ -387,7 +382,6 @@ public class Inventory : MonoBehaviour {
                     // If it is the one that we are dropping
                     set_ammo_none();
                     set_equipped_none();
-                    Destroy(equipped);
                 }
 
                 inventory.RemoveAt(current_inventory_index);
@@ -455,10 +449,6 @@ public class Inventory : MonoBehaviour {
             new Rect(0, 0, 128, 128), new Vector2());
 
             crosshair.GetComponent<AimingSystem>().enabled = true;
-        } else if (desired_equipped == "" && equipped != null) {
-            Destroy(equipped);
-            equipped = null;
-            crosshair.GetComponent<AimingSystem>().enabled = false;
         }
     }
 
@@ -471,6 +461,8 @@ public class Inventory : MonoBehaviour {
             new Rect(0, 0, 128, 128), new Vector2());
 
         crosshair.GetComponent<AimingSystem>().enabled = false;
+
+        Destroy(equipped);
     }
 
     private void set_ammo_none() {

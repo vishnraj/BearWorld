@@ -7,14 +7,16 @@ public class EnemyHealth : BasicHealth
 {
     GameObject HUD;
     GameObject player;
+    GameObject enemies;
     GameObject health_remaining;
 
     // Use this for initialization
     void Start()
     {
-        // initialize HUD and player
+        // initialize objects because this will exist in a prefabs
         HUD = GameObject.Find("HUD");
         player = GameObject.Find("Bear");
+        enemies = GameObject.Find("Enemies");
         health_remaining = null;
     }
 
@@ -34,12 +36,14 @@ public class EnemyHealth : BasicHealth
             }
 
             if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-                health_remaining == null)
+                health_remaining == null) {
                 CreateHealthRemainingOnGUI();
+            }   
 
             if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-                health_remaining != null)
+                health_remaining != null) {
                 UpdateHealthRemainingOnGUI();
+            }
         }
         
         if (health <= 0) {
@@ -47,6 +51,8 @@ public class EnemyHealth : BasicHealth
                 health_remaining.transform.SetParent(null);
             }
             Destroy(health_remaining);
+
+            enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
             Destroy(gameObject);
         }
     }

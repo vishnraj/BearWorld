@@ -13,7 +13,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     public bool forward_facing = true;
 
     public Vector3 direction;
-    public GameObject target;
+    public GameObject target = null;
     public GameObject HUD;
     public GameObject Enemies;
     public Camera main_camera;
@@ -43,6 +43,9 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         targeting_status = HUD.transform.Find("TargetingStatus");
         crosshair = HUD.transform.Find("Crosshair");
         targeting_icon = new GameObject();
+
+        // Terrible, think this should all be controlled in the crosshair, but communicated
+        // from this script via event queue and message passing
         targeting_icon.AddComponent<Image>();
         targeting_icon.GetComponent<Image>().sprite = HUD.transform.Find("Crosshair").GetComponent<AimingSystem>().target_reticle;
         targeting_icon.name = "TargetingIcon";
@@ -58,39 +61,24 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         rt = new Rotation();
         c = GetComponent<BasicCharacter>();
+
+        // Call once to set to default state
+        UpdateTargetingStatus();
     }
 
     // Update is called once per frame
     void Update()
     {
-        RaycastHit hit;
         if (target != null)
         {
             // This all needs to be handled via  state class
             // because this has become unruly garbage
 
-            // one case not handled here is when the target is in range
-            // but will be off screen when the player locks on
-            // to the target
-
-            // capture target related
             Vector3 to_target = target.transform.position - transform.position;
-            if (Physics.Raycast(transform.position, to_target, out hit, current_weapon_range, 1 << LayerMask.NameToLayer("Enemy_Layer")))
+
+            if (!locked_on)
             {
-                if (target != null && !locked_on)
-                {
-                    can_lock_on = true;
-                    UpdateTargetingStatus();
-                }
-                else if (!locked_on)
-                {
-                    can_lock_on = false;
-                    UpdateTargetingStatus();
-                }
-            }
-            else if (!locked_on)
-            {
-                can_lock_on = false;
+                can_lock_on = true;
                 UpdateTargetingStatus();
             }
 
@@ -129,6 +117,9 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 switching = false;
             }
 
+            // This is stupid, but for some reason unity, after confirming that in this frame
+            // this object exists, seems to show that this is null, even though state of all objects shouldn't get updated until
+            // the next loop, which means we can't be here to begin with
             if (target != null) {
                 c.SetTarget(target.transform.position);
                 previous_target_pos = target.transform.position;
@@ -139,8 +130,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             // This type of behavior needs to be divided
             // up into states for when locked on vs not locked on
             if (locked_on) {
-                Enemies.GetComponent<EnemyTracker>().enemies.RemoveAll(item => item == null);
-                List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().enemies;
+                List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().GetAllEnemies();
                 target = GetClosestEnemy(enemies);
 
                 if (target != null) {
@@ -148,15 +138,28 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                     if (to_target.magnitude <= current_weapon_range) {
                         c.SetTarget(target.transform.position);
                         SetTargetOnGui();
+                        // rest of information set above, as part of targeting state,
+                        // but this will be much cleaner once this section just controls
+                        // the state of the class as a different class vs control flow
                     } else {
                         DisableLockedOn();
                     }
                 } else {
                     DisableLockedOn();
                 }
-            } else {
-                DisableLockedOn();
             }
+
+            // leftover, will be done correctly with states
+            // but for now this a piece that remains enabled if
+            // targeting is lost and we didt't remove it earlier
+            //if (targeting_icon.GetComponent<Image>().enabled) {
+            //    targeting_icon.GetComponent<Image>().enabled = false;
+            //}
+
+            can_lock_on = false;
+            UpdateTargetingStatus();
+
+            c.SetTarget(direction);
         }
     }
 
@@ -175,15 +178,13 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     void DisableLockedOn() {
         locked_on = false;
-        can_lock_on = false;
         switching = false;
 
         crosshair.GetComponent<AimingSystem>().enabled = true;
+        
         targeting_icon.GetComponent<Image>().enabled = false;
-        targeting_icon.transform.SetParent(null);
 
         UpdateTargetingStatus();
-        c.SetTarget(direction);
     }
 
     void UpdateTargetingStatus()
@@ -239,10 +240,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 		//Debug.Log("current_joystick_angle: " + current_joystick_angle);
 
         sorted_by_chosen_direction.Clear();
-        // pretty sure gameloop is single threaded, so we can modify this safely
-        // basically if enemy tracker sees the change first it will, otherwise this will
-        Enemies.GetComponent<EnemyTracker>().enemies.RemoveAll(item => item == null);
-        List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().enemies;
+        List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().GetAllEnemies();
         for (int i = 0; i < enemies.Count; ++i) {
 			GameObject current_enemy = enemies[i];
 
@@ -272,9 +270,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 				continue;
 			}
 
-			Vector3 ret = main_camera.WorldToViewportPoint(current_enemy.transform.position);
-            if (current_enemy.GetInstanceID() != target.GetInstanceID() &&
-                (ret.x > 0 && ret.x < 1) && (ret.y > 0 && ret.y < 1)) 
+            if (current_enemy.GetInstanceID() != target.GetInstanceID()) 
             {
                 sorted_by_chosen_direction.Add(current_enemy, current_enemy.GetInstanceID());
             }

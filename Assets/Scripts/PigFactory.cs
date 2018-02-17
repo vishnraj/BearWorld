@@ -44,7 +44,7 @@ public class PigFactory : MonoBehaviour
             } else {
                 Vector3 position = door.position + door.forward;
                 GameObject pig = Instantiate(desired_spawn_object, position, transform.rotation) as GameObject;
-                enemy_master_obj.GetComponent<EnemyTracker>().enemies.Add(pig);
+                enemy_master_obj.GetComponent<EnemyTracker>().AddEnemy(pig);
                 pigs.Add(pig);
 
                 BasicPigAI ai = pig.GetComponent<BasicPigAI>();
