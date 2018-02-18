@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 namespace Items {
     public class Ammo {
-        public int ammo_amount;
+        public float ammo_amount;
         public GameObject ammo_type;
 
-        public Ammo(int _amount, GameObject _type) {
+        public Ammo(float _amount, GameObject _type) {
             ammo_amount = _amount;
             ammo_type = _type;
         }

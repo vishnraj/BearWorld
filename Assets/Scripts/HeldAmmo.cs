@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class HeldAmmo : MonoBehaviour {
     public GameObject ammo_type;
-    public int ammo_amount;
+    public float ammo_amount;
 
 	// Use this for initialization
 	void Start () {

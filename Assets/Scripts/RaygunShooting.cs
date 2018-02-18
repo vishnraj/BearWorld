@@ -6,6 +6,7 @@ public class RaygunShooting : BasicWeapon
     float fire_interval = 1.0f;
     bool currently_firing = false;
     IEnumerator firing;
+    IEnumerator end_step = null;
 
     // Use this for initialization
     void Start()
@@ -27,7 +28,7 @@ public class RaygunShooting : BasicWeapon
     {
         while (true)
         {
-            if (c.GetAmmoAmount() != 0)
+            if (c.GetAmmoAmount() != 0 && !currently_firing)
             {
                 GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
                 RaygunShot s = shot.GetComponent<RaygunShot>();
@@ -40,20 +41,34 @@ public class RaygunShooting : BasicWeapon
                 c.DecrementAmmoAmount();
 
                 s.enabled = true;
+                currently_firing = true;
             }
 
-            yield return new WaitForSeconds(fire_interval);
+            if (currently_firing && end_step == null) {
+                end_step = FinishFiring();
+                yield return StartCoroutine(end_step);
+            }
+
+            yield return new WaitForSeconds(0.0f);
         }
+    }
+
+    IEnumerator FinishFiring() {
+        while (currently_firing) {
+            yield return new WaitForSeconds(fire_interval);
+            currently_firing = false;
+        }
+
+        end_step = null;
+        yield return new WaitForSeconds(0.0f);
     }
 
     public override void Attack() {
         firing = Fire();
         StartCoroutine(firing);
-        currently_firing = true;
     }
 
     public override void EndAttack() {
         StopCoroutine(firing);
-        currently_firing = false;
     }
 }

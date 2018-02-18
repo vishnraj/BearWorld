@@ -8,7 +8,6 @@ public class PigFactory : MonoBehaviour
     public GameObject desired_spawn_object;
     public string desired_weapon;
     public GameObject desired_ammo;
-    public int desired_ammo_amount;
     public GameObject target;
     public GameObject enemy_master_obj;
     public int max_pigs;
@@ -28,7 +27,7 @@ public class PigFactory : MonoBehaviour
         door = transform.Find("Portal-Door");
 
         spawner = Spawn();
-        StartCoroutine(spawner);
+        //StartCoroutine(spawner);
     }
 
     // Update is called once per frame
@@ -50,7 +49,7 @@ public class PigFactory : MonoBehaviour
                 BasicPigAI ai = pig.GetComponent<BasicPigAI>();
                 ai.desired_equipped = desired_weapon;
                 ai.desired_ammo = desired_ammo;
-                ai.desired_ammo_amount = desired_ammo_amount;
+                ai.desired_ammo_amount = Mathf.Infinity;
                 ai.speed = desired_ai_speed;
                 ai.target = target;
                 ai.enabled = true;

@@ -5,7 +5,7 @@ using UnityEngine;
 public class BasicPigAI : MonoBehaviour {
     public string desired_equipped;
     public GameObject desired_ammo;
-    public int desired_ammo_amount;
+    public float desired_ammo_amount;
 
     public GameObject equipped;
     public GameObject target;

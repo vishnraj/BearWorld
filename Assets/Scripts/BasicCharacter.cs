@@ -10,7 +10,7 @@ public class BasicCharacter : MonoBehaviour {
     // important state information for the character)
 
     GameObject current_ammo_type = null;
-    int current_ammo_amount = 0;
+    float current_ammo_amount = 0;
     Vector3 target;
 
 	// Use this for initialization
@@ -26,8 +26,8 @@ public class BasicCharacter : MonoBehaviour {
     public void SetAmmoType(GameObject ammo_type) { current_ammo_type = ammo_type; }
     public GameObject GetAmmoType() { return current_ammo_type; }
 
-    public void SetAmmoAmount(int amount) { current_ammo_amount = amount; }
-    public int GetAmmoAmount() { return current_ammo_amount; }
+    public void SetAmmoAmount(float amount) { current_ammo_amount = amount; }
+    public float GetAmmoAmount() { return current_ammo_amount; }
     public void DecrementAmmoAmount() { --current_ammo_amount; }
 
     public void SetTarget(Vector3 direction) { target = direction; }
