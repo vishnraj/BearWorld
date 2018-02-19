@@ -306,7 +306,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 			Debug.Log("input x: " + input_x);
 			Debug.Log("input y: " + input_y);
 			*/
-            Debug.Log("All objects are out of range.");
+            //Debug.Log("All objects are out of range.");
         }
     }
 

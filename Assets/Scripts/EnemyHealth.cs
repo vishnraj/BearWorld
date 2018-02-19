@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
-using System.Collections;
+using System.Collections.Generic;
 
 public class EnemyHealth : BasicHealth
 {
+    public List<string> random_drop_list;
+
     GameObject HUD;
     GameObject player;
     GameObject enemies;
@@ -17,6 +18,9 @@ public class EnemyHealth : BasicHealth
         HUD = GameObject.Find("HUD");
         player = GameObject.Find("Bear");
         enemies = GameObject.Find("Enemies");
+
+        enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
+
         health_remaining = null;
     }
 
@@ -53,6 +57,12 @@ public class EnemyHealth : BasicHealth
             Destroy(health_remaining);
 
             enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
+
+            if (random_drop_list.Count != 0) {
+                Items.DropFactory f = new Items.DropFactory();
+                f.Drop(random_drop_list, transform.position);
+            }
+
             Destroy(gameObject);
         }
     }

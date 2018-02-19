@@ -8,7 +8,7 @@ public class BasicPigAI : MonoBehaviour {
     public float desired_ammo_amount;
 
     public GameObject equipped;
-    public GameObject target;
+    public GameObject target = null;
     public float speed;
 
     BasicCharacter c;

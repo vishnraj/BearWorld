@@ -4,12 +4,10 @@ using System.Collections.Generic;
 
 public class PigFactory : MonoBehaviour
 {
-
     public GameObject desired_spawn_object;
     public string desired_weapon;
     public GameObject desired_ammo;
     public GameObject target;
-    public GameObject enemy_master_obj;
     public int max_pigs;
     public float desired_ai_speed;
     public int spawn_interval;
@@ -27,7 +25,7 @@ public class PigFactory : MonoBehaviour
         door = transform.Find("Portal-Door");
 
         spawner = Spawn();
-        //StartCoroutine(spawner);
+        StartCoroutine(spawner);
     }
 
     // Update is called once per frame
@@ -43,7 +41,6 @@ public class PigFactory : MonoBehaviour
             } else {
                 Vector3 position = door.position + door.forward;
                 GameObject pig = Instantiate(desired_spawn_object, position, transform.rotation) as GameObject;
-                enemy_master_obj.GetComponent<EnemyTracker>().AddEnemy(pig);
                 pigs.Add(pig);
 
                 BasicPigAI ai = pig.GetComponent<BasicPigAI>();

@@ -2,8 +2,6 @@
 using UnityEngine;
 
 public class CompositeEnemy : MonoBehaviour {
-    public GameObject enemies;
-    
     public List<GameObject> contained_enemies;
 
 	// Use this for initialization
@@ -12,9 +10,8 @@ public class CompositeEnemy : MonoBehaviour {
 
         for (int i = 0; i < transform.childCount; ++i) {
             Transform child = transform.GetChild(i);
-            if (child.name.Contains("Window")) {
+            if (child.GetComponent<EnemyHealth>() != null) {
                 contained_enemies.Add(child.gameObject);
-                enemies.GetComponent<EnemyTracker>().AddEnemy(child.gameObject);
             }
         }
 	}

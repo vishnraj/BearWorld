@@ -11,7 +11,7 @@ public class RaygunShooting : BasicWeapon
     // Use this for initialization
     void Start()
     {
-        Init();
+
     }
 
     private void Awake() {
@@ -69,6 +69,8 @@ public class RaygunShooting : BasicWeapon
     }
 
     public override void EndAttack() {
-        StopCoroutine(firing);
+        if (firing != null) {
+            StopCoroutine(firing);
+        }
     }
 }

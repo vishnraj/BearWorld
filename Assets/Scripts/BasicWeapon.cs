@@ -11,15 +11,16 @@ namespace Weapon {
         public GameObject SpawnEquipped(string desired_equipped, Transform _parent) {
             GameObject equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), _parent.position, _parent.rotation) as GameObject;
             equipped.transform.parent = _parent;
+
+            // Some processing to get rid of clone or similar
+            // words that show up in the name
             if (equipped.name.Contains(" ")) {
                 equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf(" "));
             } else if (equipped.name.Contains("(")) {
                 equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
             }
-            
-            
-            Object.Destroy(equipped.GetComponent<Rigidbody>());
-            Object.Destroy(equipped.GetComponent<BoxCollider>());
+
+            equipped.GetComponent<BasicWeapon>().Init();
 
             return equipped;
         }
@@ -45,7 +46,7 @@ public abstract class BasicWeapon : MonoBehaviour {
     public virtual void Attack() { }
     public virtual void EndAttack() { }
 
-    protected virtual void Init() {
+    public virtual void Init() {
         if (transform.parent == null) {
             Debug.Log("Error, weapon not assigned to parent.");
             return;

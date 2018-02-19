@@ -7,11 +7,6 @@ public class SwordAttack : BasicWeapon {
 
     // Use this for initialization
     void Start() {
-        Init();
-
-        transform.Rotate(0, 75, 0);
-        transform.Rotate(-90, 0, 0);
-
         blade = transform.Find("Blade").GetComponent<SwordDamage>();
         blade.SetOriginTag(c.tag);
     }
@@ -31,5 +26,11 @@ public class SwordAttack : BasicWeapon {
 
     public override void EndAttack() {
         transform.Rotate(0, 0, -90);
+    }
+
+    public override void Init() {
+        base.Init();
+        transform.Rotate(0, 75, 0);
+        transform.Rotate(-90, 0, 0);
     }
 }

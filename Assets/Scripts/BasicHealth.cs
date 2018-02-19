@@ -15,6 +15,10 @@ public class BasicHealth : MonoBehaviour {
       
     }
 
+    public void Heal(float incoming_health) {
+        health += incoming_health;
+    }
+
     private void OnTriggerEnter(Collider other) {
         DamageDealer d = other.gameObject.GetComponent<DamageDealer>();
 

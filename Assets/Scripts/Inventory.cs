@@ -13,6 +13,19 @@ namespace Items {
             ammo_type = _type;
         }
     }
+
+    public class DropFactory {
+        // (kind of a) Factory function
+        public void Drop(List<string> drops, Vector3 pos) {
+            System.Random rnd = new System.Random();
+            int i = rnd.Next(0, drops.Count);
+
+            GameObject dropped = Object.Instantiate(Resources.Load("Prefabs/" + drops[i]), pos, new Quaternion()) as GameObject;
+            dropped.GetComponent<BoxCollider>().enabled = true;
+            dropped.GetComponent<Rigidbody>().isKinematic = false;
+            dropped.GetComponent<Rigidbody>().mass = 1;
+        }
+    }
 }
 
 // Will determine how items are picked up and assigned 
@@ -161,6 +174,8 @@ public class Inventory : MonoBehaviour {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
                     ammo_inventory.Add(item.name, new Items.Ammo(ammo.ammo_amount, ammo.ammo_type));
                 }
+
+                Destroy(item);
             } else if (inventory.Contains(item.name)) {
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
@@ -171,9 +186,10 @@ public class Inventory : MonoBehaviour {
                         c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount); // this needs to get updated for other objects to see
                         update_ammo_remaining(); // Update GUI
                     }
+
+                    Destroy(item);
                 }
             }
-            Destroy(item);
         }
     }
 
