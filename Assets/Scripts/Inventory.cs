@@ -355,14 +355,15 @@ public class Inventory : MonoBehaviour {
 
     private void set_ammo_type(string weapon_name) {
         switch (weapon_name) {
-            case "Raygun": {
-                    c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
-                    c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
+            case "Raygun":
+            case "Bombs": {
+                c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
+                c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
 
-                    update_ammo_type();
-                    update_ammo_remaining(); // Update on GUI
-                }
-                break;
+                update_ammo_type();
+                update_ammo_remaining(); // Update on GUI
+            }
+            break;
             default:
                 set_ammo_none();
                 break;
@@ -453,8 +454,7 @@ public class Inventory : MonoBehaviour {
                 Destroy(equipped);
             }
 
-            Transform right_arm = transform.Find("RightArm");
-            equipped = f.SpawnEquipped(desired_equipped, right_arm);
+            equipped = f.SpawnEquipped(desired_equipped, transform, "RightArm");
 
             tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
 

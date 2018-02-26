@@ -20,14 +20,12 @@ public class AimingSystem : MonoBehaviour
 
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
-    Searching search_tool;
 
     // Use this for initialization
     void Start()
     {
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
         c = player.GetComponent<BasicCharacter>();
-        search_tool = new Searching();
     }
 
     // Update is called once per frame
@@ -39,14 +37,14 @@ public class AimingSystem : MonoBehaviour
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
         tps.direction = ray.GetPoint(in_front_of);
 
-        if (Physics.Raycast(ray, out hit) && hit.collider.tag == "Enemy")
+        if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
         {
             Vector3 direction = player.transform.position - hit.transform.position;
 
             if (direction.magnitude <= tps.current_weapon_range) {
                 if (!tps.locked_on) {
                     // changing state of objects should rely on message passing
-                    tps.target = search_tool.FindComponentUpHierarchy<EnemyHealth>(hit.collider.gameObject.transform);
+                    tps.target = hit.collider.gameObject;
                 }
 
                 crosshair.GetComponent<Image>().sprite = target_reticle;

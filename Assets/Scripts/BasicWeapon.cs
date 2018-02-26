@@ -8,19 +8,56 @@ namespace Weapon {
 
     class WeaponFactory {
         // (kind of a) Factory function
-        public GameObject SpawnEquipped(string desired_equipped, Transform _parent) {
-            GameObject equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), _parent.position, _parent.rotation) as GameObject;
-            equipped.transform.parent = _parent;
+        public GameObject SpawnEquipped(string desired_equipped, Transform character, string body_part = "") {
+            GameObject equipped = null;
+            switch (desired_equipped) {
+                case "Raygun":
+                case "Sword": {
+                    if (body_part == "") {
+                        Debug.LogError("We require a body part to equip weapon of type: " + desired_equipped);
+                    }
 
-            // Some processing to get rid of clone or similar
-            // words that show up in the name
-            if (equipped.name.Contains(" ")) {
-                equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf(" "));
-            } else if (equipped.name.Contains("(")) {
-                equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
+                    Transform part = character.Find(body_part);
+                    if (part != null) {
+                        equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), part.position, part.rotation) as GameObject;
+                        equipped.transform.parent = part;
+                    } else {
+                        Debug.LogError("No valid body part found for equipping: " + desired_equipped);
+                    }
+                }
+                break;
+                case "Bombs": {
+                    if (body_part != "") {
+                        Transform part = character.Find(body_part);
+                        equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), part.position, part.rotation) as GameObject;
+                        equipped.transform.parent = part;
+                    } else {
+                        equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), character.position, character.rotation) as GameObject;
+                        equipped.transform.parent = character;
+                    }
+
+                    foreach (Transform child in equipped.transform) {
+                        Object.Destroy(child.gameObject);
+                    }
+                }
+                break;
+                default: {
+                    Debug.LogError("For spawning equipped, no case found.");
+                    return new GameObject();
+                }
             }
 
-            equipped.GetComponent<BasicWeapon>().Init();
+            if (equipped != null) {
+                // Some processing to get rid of clone or similar
+                // words that show up in the name
+                if (equipped.name.Contains(" ")) {
+                    equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf(" "));
+                } else if (equipped.name.Contains("(")) {
+                    equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
+                }
+
+                equipped.GetComponent<BasicWeapon>().Init();
+            }
 
             return equipped;
         }
@@ -51,11 +88,6 @@ public abstract class BasicWeapon : MonoBehaviour {
             Debug.Log("Error, weapon not assigned to parent.");
             return;
         }
-
-        Vector3 pos = transform.position;
-        pos += transform.forward * .3f;
-        pos += transform.up * .2f;
-        transform.position = pos;
     }
 
     public Weapon.WEAPON_TYPE GetWeaponType() { return type; }

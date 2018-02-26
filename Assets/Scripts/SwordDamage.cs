@@ -6,6 +6,7 @@ using Utility;
 public class SwordDamage : DamageDealer {
     public bool attacking = false;
     public bool entered = false;
+    public float damage;
 
     // Use this for initialization
     void Start () {
@@ -17,7 +18,7 @@ public class SwordDamage : DamageDealer {
     }
 
     public override float DealDamage(float health) {
-        health -= 3;
+        health -= damage;
         entered = true;
         
         return health;

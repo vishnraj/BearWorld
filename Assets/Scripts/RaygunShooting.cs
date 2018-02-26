@@ -3,7 +3,7 @@ using System.Collections;
 
 public class RaygunShooting : BasicWeapon
 {
-    float fire_interval = 1.0f;
+    public float fire_interval;
     bool currently_firing = false;
     IEnumerator firing;
     IEnumerator end_step = null;
@@ -41,6 +41,7 @@ public class RaygunShooting : BasicWeapon
                 c.DecrementAmmoAmount();
 
                 s.enabled = true;
+
                 currently_firing = true;
             }
 
@@ -54,10 +55,8 @@ public class RaygunShooting : BasicWeapon
     }
 
     IEnumerator FinishFiring() {
-        while (currently_firing) {
-            yield return new WaitForSeconds(fire_interval);
-            currently_firing = false;
-        }
+        yield return new WaitForSeconds(fire_interval);
+        currently_firing = false;
 
         end_step = null;
         yield return new WaitForSeconds(0.0f);
@@ -72,5 +71,14 @@ public class RaygunShooting : BasicWeapon
         if (firing != null) {
             StopCoroutine(firing);
         }
+    }
+
+    public override void Init() {
+        base.Init();
+
+        Vector3 pos = transform.position;
+        pos += transform.forward * .3f;
+        pos += transform.up * .2f;
+        transform.position = pos;
     }
 }

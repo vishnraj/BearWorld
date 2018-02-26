@@ -19,10 +19,14 @@ public class BasicHealth : MonoBehaviour {
         health += incoming_health;
     }
 
+    public void Damage(float incoming_damage) {
+        health -= incoming_damage;
+    }
+
     private void OnTriggerEnter(Collider other) {
         DamageDealer d = other.gameObject.GetComponent<DamageDealer>();
 
-        if (d != null && d.GetOriginTag() != tag) {
+        if (d != null && d.enabled && d.GetOriginTag() != tag) {
             health = d.DealDamage(health);
         }
     }

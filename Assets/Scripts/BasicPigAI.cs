@@ -21,8 +21,7 @@ public class BasicPigAI : MonoBehaviour {
         f = new Weapon.WeaponFactory();
 
         if (desired_equipped != null) {
-            Transform right_arm = transform.Find("RightArm");
-            equipped = f.SpawnEquipped(desired_equipped, right_arm);
+            equipped = f.SpawnEquipped(desired_equipped, transform, "RightArm");
 
             c.SetAmmoType(desired_ammo);
             c.SetAmmoAmount(desired_ammo_amount);
@@ -45,6 +44,7 @@ public class BasicPigAI : MonoBehaviour {
             Vector3 to_target = target.transform.position - transform.position;
             Vector3 direction = Vector3.RotateTowards(transform.forward, to_target, Mathf.PI, 0);
             transform.rotation = Quaternion.LookRotation(direction);
+
             float step = speed * Time.deltaTime;
             transform.position = Vector3.MoveTowards(transform.position, target.transform.position, step);
         } else {

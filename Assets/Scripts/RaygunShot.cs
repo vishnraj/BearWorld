@@ -6,6 +6,7 @@ public class RaygunShot : DamageDealer {
     public float shot_speed;
     public float interval_before_destruction;
     public float start_distance_before_destruction;
+    public float damage;
 
     bool fired = false;
     bool expired = false;
@@ -43,14 +44,6 @@ public class RaygunShot : DamageDealer {
         }
     }
 
-    void OnTriggerEnter(Collider collide)
-    {
-        if (collide.tag != "Ammunition" && collide.tag != origin_tag)
-        {
-            Destroy(gameObject);
-        }
-    }
-
     public void SetDirection(Vector3 _direction, float range) {
         direction = (_direction - transform.position).normalized;
         // should be the range distance in front of the transform that
@@ -60,7 +53,8 @@ public class RaygunShot : DamageDealer {
     }
 
     public override float DealDamage(float health) {
-        health -= 1;
+        health -= damage;
+        Destroy(gameObject);
         return health;
     }
 }
