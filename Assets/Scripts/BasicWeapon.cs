@@ -43,7 +43,7 @@ namespace Weapon {
                 break;
                 default: {
                     Debug.LogError("For spawning equipped, no case found.");
-                    return new GameObject();
+                    return equipped;
                 }
             }
 

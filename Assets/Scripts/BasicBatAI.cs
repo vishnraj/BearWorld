@@ -2,13 +2,7 @@
 using UnityEngine;
 using Utility;
 
-public class BasicBatAI : MonoBehaviour {
-    public string desired_equipped;
-    public GameObject desired_ammo;
-    public float desired_ammo_amount;
-
-    public GameObject equipped;
-    public GameObject target = null;
+public class BasicBatAI : BasicEnemyAI {
     public float speed;
     public float circular_speed;
     public float attack_interval;
@@ -20,31 +14,11 @@ public class BasicBatAI : MonoBehaviour {
     bool in_circular = false;
     float angle = 0;
 
-    Rotation r;   
-    BasicCharacter c;
-    BasicWeapon w;
-    Weapon.WeaponFactory f;
+    Rotation r;
 
     // Use this for initialization
     void Start() {
-        c = GetComponent<BasicCharacter>();
-        f = new Weapon.WeaponFactory();
-        r = new Rotation();
-
-        if (desired_equipped != null) {
-            equipped = f.SpawnEquipped(desired_equipped, transform);
-
-            c.SetAmmoType(desired_ammo);
-            c.SetAmmoAmount(float.PositiveInfinity);
-
-            w = equipped.GetComponent<BasicWeapon>();
-            w.SetCharacter(c);
-            w.enabled = true;
-        }
-
-        if (target != null) {
-            c.SetTarget(target.transform.position);
-        }
+        Init();
     }
 
     IEnumerator FinishDrop() {
@@ -101,6 +75,13 @@ public class BasicBatAI : MonoBehaviour {
                 Vector3 offset = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * to_target.magnitude;
                 transform.position = xz_target_pos + offset;
             }
+        } else {
+            w.EndAttack();
         }
+    }
+
+    protected override void Init() {
+        base.Init();
+        r = new Rotation();
     }
 }

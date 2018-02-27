@@ -2,7 +2,7 @@
 using UnityEngine;
 
 public class CompositeEnemy : MonoBehaviour {
-    public List<GameObject> contained_enemies;
+    List<GameObject> contained_enemies;
 
 	// Use this for initialization
 	void Start () {

@@ -87,6 +87,8 @@
     <Compile Include="Assets\Scripts\AimingSystem.cs" />
     <Compile Include="Assets\Scripts\BasicBatAI.cs" />
     <Compile Include="Assets\Scripts\BasicCharacter.cs" />
+    <Compile Include="Assets\Scripts\BasicEnemyAI.cs" />
+    <Compile Include="Assets\Scripts\BasicEnemyFactory.cs" />
     <Compile Include="Assets\Scripts\BasicHealth.cs" />
     <Compile Include="Assets\Scripts\BasicHealthPack.cs" />
     <Compile Include="Assets\Scripts\BasicPigAI.cs" />
@@ -104,7 +106,6 @@
     <Compile Include="Assets\Scripts\ItemSystem.cs" />
     <Compile Include="Assets\Scripts\KeyboardThirdPersonMovement.cs" />
     <Compile Include="Assets\Scripts\MouseRotatingCamera.cs" />
-    <Compile Include="Assets\Scripts\PigFactory.cs" />
     <Compile Include="Assets\Scripts\PlayerAttackController.cs" />
     <Compile Include="Assets\Scripts\PlayerHealth.cs" />
     <Compile Include="Assets\Scripts\RaygunShooting.cs" />
