@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using Utility;
 
 namespace Items {
     public class Ammo {
@@ -64,6 +64,7 @@ public class Inventory : MonoBehaviour {
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
     Weapon.WeaponFactory f;
+    Poller p;
 
     // Use this for initialization
     private void Start() {
@@ -76,6 +77,7 @@ public class Inventory : MonoBehaviour {
         pac = GetComponent<PlayerAttackController>();
         c = GetComponent<BasicCharacter>();
         f = new Weapon.WeaponFactory();
+        p = new Poller();
 
         equipped_icon = HUD.transform.Find("EquippedIcon");
         equipped_status = HUD.transform.Find("EquippedStatus");
@@ -160,7 +162,7 @@ public class Inventory : MonoBehaviour {
             return;
         }
 
-        if (Input.GetButtonDown("X")) {
+        if (Input.GetButton("X")) {
             if (item.name.Contains(" ")) {
                 item.name = item.name.Substring(0, item.name.LastIndexOf(" "));
             } else if (item.name.Contains("(")) {
@@ -180,15 +182,30 @@ public class Inventory : MonoBehaviour {
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
                     if ((equipped == null) || (equipped != null && item.name != equipped.name)) {
-                        ammo_inventory[item.name].ammo_amount += ammo.ammo_amount;
+                        increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, false);
                     } else {
-                        ammo_inventory[item.name].ammo_amount = c.GetAmmoAmount() + ammo.ammo_amount;
+                        increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, true);
                         c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount); // this needs to get updated for other objects to see
                         update_ammo_remaining(); // Update GUI
                     }
 
                     Destroy(item);
                 }
+            }
+        }
+    }
+
+    void increase_inventory_ammo(string item_name, float weapon_ammo_cap, float in_amount, bool is_equipped) {
+        float current_amount = ammo_inventory[item_name].ammo_amount;
+        if (!is_equipped && current_amount + in_amount >= weapon_ammo_cap) {
+            ammo_inventory[item_name].ammo_amount = weapon_ammo_cap;
+        } else if (is_equipped && c.GetAmmoAmount() + in_amount >= weapon_ammo_cap) {
+            ammo_inventory[item_name].ammo_amount = weapon_ammo_cap;
+        } else {
+            if (!is_equipped) {
+                ammo_inventory[item_name].ammo_amount += in_amount;
+            } else {
+                ammo_inventory[item_name].ammo_amount = c.GetAmmoAmount() + in_amount;
             }
         }
     }
@@ -237,9 +254,14 @@ public class Inventory : MonoBehaviour {
         rt.anchorMin = new Vector2(.5f, .5f);
         rt.sizeDelta = new Vector2(rt.sizeDelta.x * .5f, rt.sizeDelta.y * .5f);
         ui_component.AddComponent<Image>();
-        ui_component.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(Resources.Load("Prefabs/" + name)),
-            new Rect(0, 0, 128, 128), new Vector2()); // this needs to be configured
-                                                      // size of textures can differ from sprite to sprite
+
+        Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + name));
+        if (s != null) {
+            ui_component.GetComponent<Image>().sprite = s;
+        } else {
+            Debug.LogError("We had an issue generating the asset preview");
+        }
+
         menu_objects.Add(ui_component);
     }
 
@@ -423,6 +445,10 @@ public class Inventory : MonoBehaviour {
                 // instantiate the object under the player
                 GameObject item = (GameObject)Instantiate(Resources.Load("Prefabs/" + dropped));
                 item.transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+                item.GetComponent<BoxCollider>().enabled = true;
+                item.GetComponent<Rigidbody>().isKinematic = false;
+                item.GetComponent<Rigidbody>().mass = 1;
+
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     item.GetComponent<HeldAmmo>().ammo_amount = ammo_inventory[dropped].ammo_amount;
                     ammo_inventory.Remove(dropped);
@@ -442,8 +468,12 @@ public class Inventory : MonoBehaviour {
     }
 
     private void update_ammo_type() {
-        ammo_icon.gameObject.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(Resources.Load("Prefabs/" + c.GetAmmoType().name)),
-            new Rect(0, 0, 128, 128), new Vector2());
+        Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + c.GetAmmoType().name));
+        if (s != null) {
+            ammo_icon.gameObject.GetComponent<Image>().sprite = s;
+        } else {
+            Debug.LogError("We had an issue generating the asset preview");
+        }
     }
 
     public void update_equipped() {
@@ -461,8 +491,12 @@ public class Inventory : MonoBehaviour {
             equipped_status.gameObject.GetComponent<Text>().text = equipped.name + " equipped";
             equipped_status.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
 
-            equipped_icon.gameObject.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(Resources.Load("Prefabs/" + equipped.name)),
-            new Rect(0, 0, 128, 128), new Vector2());
+            Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + equipped.name));
+            if (s != null) {
+                equipped_icon.gameObject.GetComponent<Image>().sprite = s;
+            } else {
+                Debug.LogError("We had an issue generating the asset preview");
+            }
 
             crosshair.GetComponent<AimingSystem>().enabled = true;
         }
@@ -472,9 +506,12 @@ public class Inventory : MonoBehaviour {
         equipped_status.gameObject.GetComponent<Text>().text = "None equipped";
         equipped_status.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
 
-
-        equipped_icon.gameObject.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(none),
-            new Rect(0, 0, 128, 128), new Vector2());
+        Sprite s = p.poll_asset_preview(none);
+        if (s != null) {
+            equipped_icon.gameObject.GetComponent<Image>().sprite = s;
+        } else {
+            Debug.LogError("We had an issue generating the asset preview");
+        }
 
         crosshair.GetComponent<AimingSystem>().enabled = false;
 
@@ -488,8 +525,12 @@ public class Inventory : MonoBehaviour {
         ammo_remaining.gameObject.GetComponent<Text>().text = "Ammo not set ";
         ammo_remaining.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
 
-        ammo_icon.gameObject.GetComponent<Image>().sprite = Sprite.Create(AssetPreview.GetAssetPreview(none),
-            new Rect(0, 0, 128, 128), new Vector2());
+        Sprite s = p.poll_asset_preview(none);
+        if (s != null) {
+            ammo_icon.gameObject.GetComponent<Image>().sprite = s;
+        } else {
+            Debug.LogError("We had an issue generating the asset preview");
+        }
     }
 
     void ActivateItem() {

@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Utility
 {
@@ -67,6 +69,23 @@ namespace Utility
                 return FindComponentUpHierarchy<T>(child.parent);
 
             return null;
+        }
+    }
+
+    public class Poller {
+        public Sprite poll_asset_preview(Object o) {
+            int counter = 0;
+            Sprite s = null;
+            while (s == null && counter < 75) {
+                #if UNITY_EDITOR
+                    s = Sprite.Create(AssetPreview.GetAssetPreview(o),
+                    new Rect(0, 0, 128, 128), new Vector2()); ;
+                #endif
+                counter++;
+                System.Threading.Thread.Sleep(15);
+            }
+
+            return s;
         }
     }
 }

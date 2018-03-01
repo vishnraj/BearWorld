@@ -16,7 +16,7 @@ public class EnemyHealth : BasicHealth
     {
         // initialize objects because this will exist in a prefabs
         HUD = GameObject.Find("HUD");
-        player = GameObject.Find("Bear");
+        player = GameObject.Find("Bear"); // things related to player should be communicated via messages
         enemies = GameObject.Find("Enemies");
 
         enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
@@ -42,7 +42,7 @@ public class EnemyHealth : BasicHealth
             if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
                 health_remaining == null) {
                 CreateHealthRemainingOnGUI();
-            }   
+            }
 
             if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
                 health_remaining != null) {
@@ -82,6 +82,7 @@ public class EnemyHealth : BasicHealth
 
     void CreateHealthRemainingOnGUI() {
         health_remaining = new GameObject();
+        health_remaining.name = "Health Remaining " + name;
         health_remaining.AddComponent<Text>().text = health.ToString();
         health_remaining.layer = 5;
 
@@ -93,13 +94,6 @@ public class EnemyHealth : BasicHealth
         health_text.enabled = true;
         health_text.color = new Color(255, 0, 0);
 
-        Vector2 enemy_screen_point = player.GetComponent<ThirdPersonTargetingSystem>().main_camera.WorldToViewportPoint(transform.position);
-        RectTransform hud_rect = HUD.GetComponent<RectTransform>();
-        Vector2 enemy_health_position = new Vector2(
-        ((enemy_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.46f)),
-        ((enemy_screen_point.y * hud_rect.sizeDelta.y) - (hud_rect.sizeDelta.y * 0.53f)));
-
         health_remaining.transform.SetParent(HUD.transform);
-        health_remaining.GetComponent<RectTransform>().anchoredPosition = enemy_health_position;
     }
 }

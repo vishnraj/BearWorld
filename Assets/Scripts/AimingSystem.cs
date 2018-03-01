@@ -37,7 +37,7 @@ public class AimingSystem : MonoBehaviour
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
         tps.direction = ray.GetPoint(in_front_of);
 
-        if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
+        if (player != null && Physics.Raycast(ray, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
         {
             Vector3 direction = player.transform.position - hit.transform.position;
 

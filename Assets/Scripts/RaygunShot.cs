@@ -44,6 +44,13 @@ public class RaygunShot : DamageDealer {
         }
     }
 
+    void OnTriggerEnter(Collider collide) {
+        if (collide.tag != "Ammunition" && collide.tag != origin_tag) {
+            expired = true;
+            start_time_of_destruction = Time.time;
+        }
+    }
+
     public void SetDirection(Vector3 _direction, float range) {
         direction = (_direction - transform.position).normalized;
         // should be the range distance in front of the transform that

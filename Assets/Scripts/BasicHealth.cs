@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class BasicHealth : MonoBehaviour {
+    public float max_health;
     public float health;
 
     // Use this for initialization
@@ -16,7 +17,11 @@ public class BasicHealth : MonoBehaviour {
     }
 
     public void Heal(float incoming_health) {
-        health += incoming_health;
+        if (health + incoming_health >= max_health) {
+            health = max_health;
+        } else {
+            health += incoming_health;
+        }
     }
 
     public void Damage(float incoming_damage) {
