@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\AimingSystem.cs" />
+    <Compile Include="Assets\Scripts\AssetPreviewGenerator.cs" />
     <Compile Include="Assets\Scripts\BasicBatAI.cs" />
     <Compile Include="Assets\Scripts\BasicCharacter.cs" />
     <Compile Include="Assets\Scripts\BasicEnemyAI.cs" />

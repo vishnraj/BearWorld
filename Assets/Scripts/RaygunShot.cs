@@ -46,6 +46,9 @@ public class RaygunShot : DamageDealer {
 
     void OnTriggerEnter(Collider collide) {
         if (collide.tag != "Ammunition" && collide.tag != origin_tag) {
+            GetComponent<SphereCollider>().enabled = false;
+            GetComponent<MeshRenderer>().enabled = false;
+
             expired = true;
             start_time_of_destruction = Time.time;
         }

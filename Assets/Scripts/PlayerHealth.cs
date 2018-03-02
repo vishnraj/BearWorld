@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using Utility;
 
 public class PlayerHealth : BasicHealth
 {
@@ -10,17 +9,14 @@ public class PlayerHealth : BasicHealth
     GameObject game_over;
     Transform player_icon;
     Transform health_remaining;
-    Poller p;
-    
 
     // Use this for initialization
     void Start()
     {
         player_icon = HUD.transform.Find("PlayerIcon");
         health_remaining = HUD.transform.Find("HealthRemaining");
-        p = new Poller();
 
-        Sprite s = p.poll_asset_preview(player);
+        Sprite s = Resources.Load<Sprite>("Sprites/" + player.name);
         if (s != null) {
             player_icon.gameObject.GetComponent<Image>().sprite = s;
         } else {

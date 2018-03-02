@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using Utility;
 
 namespace Items {
     public class Ammo {
@@ -64,7 +63,6 @@ public class Inventory : MonoBehaviour {
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
     Weapon.WeaponFactory f;
-    Poller p;
 
     // Use this for initialization
     private void Start() {
@@ -77,7 +75,6 @@ public class Inventory : MonoBehaviour {
         pac = GetComponent<PlayerAttackController>();
         c = GetComponent<BasicCharacter>();
         f = new Weapon.WeaponFactory();
-        p = new Poller();
 
         equipped_icon = HUD.transform.Find("EquippedIcon");
         equipped_status = HUD.transform.Find("EquippedStatus");
@@ -255,7 +252,7 @@ public class Inventory : MonoBehaviour {
         rt.sizeDelta = new Vector2(rt.sizeDelta.x * .5f, rt.sizeDelta.y * .5f);
         ui_component.AddComponent<Image>();
 
-        Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + name));
+        Sprite s = Resources.Load<Sprite>("Sprites/" + name);
         if (s != null) {
             ui_component.GetComponent<Image>().sprite = s;
         } else {
@@ -468,7 +465,7 @@ public class Inventory : MonoBehaviour {
     }
 
     private void update_ammo_type() {
-        Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + c.GetAmmoType().name));
+        Sprite s = Resources.Load<Sprite>("Sprites/" + c.GetAmmoType().name);
         if (s != null) {
             ammo_icon.gameObject.GetComponent<Image>().sprite = s;
         } else {
@@ -491,7 +488,7 @@ public class Inventory : MonoBehaviour {
             equipped_status.gameObject.GetComponent<Text>().text = equipped.name + " equipped";
             equipped_status.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
 
-            Sprite s = p.poll_asset_preview(Resources.Load("Prefabs/" + equipped.name));
+            Sprite s = Resources.Load<Sprite>("Sprites/" + equipped.name);
             if (s != null) {
                 equipped_icon.gameObject.GetComponent<Image>().sprite = s;
             } else {
@@ -506,7 +503,7 @@ public class Inventory : MonoBehaviour {
         equipped_status.gameObject.GetComponent<Text>().text = "None equipped";
         equipped_status.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
 
-        Sprite s = p.poll_asset_preview(none);
+        Sprite s = Resources.Load<Sprite>("Sprites/" + none.name);
         if (s != null) {
             equipped_icon.gameObject.GetComponent<Image>().sprite = s;
         } else {
@@ -525,7 +522,7 @@ public class Inventory : MonoBehaviour {
         ammo_remaining.gameObject.GetComponent<Text>().text = "Ammo not set ";
         ammo_remaining.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
 
-        Sprite s = p.poll_asset_preview(none);
+        Sprite s = Resources.Load<Sprite>("Sprites/" + none.name);
         if (s != null) {
             ammo_icon.gameObject.GetComponent<Image>().sprite = s;
         } else {
@@ -545,4 +542,3 @@ public class Inventory : MonoBehaviour {
         pac.enabled = false;
     }
 }
-

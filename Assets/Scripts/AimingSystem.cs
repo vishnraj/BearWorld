@@ -9,6 +9,7 @@ public class AimingSystem : MonoBehaviour
     public GameObject crosshair;
     public Camera cam;
     public GameObject player;
+    public float ray_radius;
 
     // This is hard coded, it just guarantees
     // that the part of the ray used to set direction
@@ -37,7 +38,7 @@ public class AimingSystem : MonoBehaviour
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
         tps.direction = ray.GetPoint(in_front_of);
 
-        if (player != null && Physics.Raycast(ray, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
+        if (player != null && Physics.SphereCast(ray, ray_radius, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
         {
             Vector3 direction = player.transform.position - hit.transform.position;
 
