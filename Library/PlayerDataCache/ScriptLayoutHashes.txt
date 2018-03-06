@@ -125,6 +125,7 @@ c2275a8bfbb9f9942cad75ecdfded41d UnityEngine.HoloLens.dll:UnityEngine.VR.WSA.Spa
 45f3431f0103c41611e8d4eec3d439df UnityEngine.HoloLens.dll:UnityEngine.VR.WSA.SpatialMappingRenderer
 6bfa94da80a774e6f1e045307ec22bf2 Assembly-CSharp.dll:.FixedCamera
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp-firstpass.dll:UnityStandardAssets.Utility.DragRigidbody
+6f5b9db3e77010c05fc19863fc31f2a3 Assembly-CSharp.dll:.AssetPreviewGenerator
 9b9a29ec650d05247df9e5347c82ee61 Assembly-CSharp.dll:.HeldAmmo
 78ebae5ed9b3edeb216da437b99754a4 Assembly-CSharp-firstpass.dll:UnityStandardAssets.CrossPlatformInput.Joystick
 cd6d5f07a08d70e7bbcc0d898c4f78e3 Assembly-CSharp.dll:.RaygunShooting
@@ -202,4 +203,3 @@ ba825e8ca32da1ddcb4392f81c21f06f Assembly-CSharp.dll:.PlayerAttackController
 e81dc1cd4bb32e70d589c7ce707ce160 Assembly-CSharp.dll:.BasicBatAI
 1500c17e67d637f1a816a5671a17c546 Assembly-CSharp.dll:.BombDamage
 0f3d4bb7128a287827d041c696039525 Assembly-CSharp-firstpass.dll:UnityStandardAssets.Utility.AutoMobileShaderSwitch
-6f5b9db3e77010c05fc19863fc31f2a3 Assembly-CSharp.dll:.AssetPreviewGenerator

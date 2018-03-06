@@ -51,6 +51,16 @@ public class EnemyHealth : BasicHealth
         }
         
         if (health <= 0) {
+            if (GetComponent<EnemyExplosion>() != null) {
+                // from this point (unless we have reform script)
+                // we will delagate death of the enemy to the
+                // enemy explosion script
+                Destroy(health_remaining);
+                enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
+                enabled = false;
+                return;
+            }
+
             if (health_remaining != null) {
                 health_remaining.transform.SetParent(null);
             }

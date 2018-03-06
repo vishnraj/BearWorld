@@ -38,7 +38,8 @@ public class AimingSystem : MonoBehaviour
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
         tps.direction = ray.GetPoint(in_front_of);
 
-        if (player != null && Physics.SphereCast(ray, ray_radius, out hit) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
+        int enemy_layer = 1 << LayerMask.NameToLayer("Enemy_Layer");
+        if (player != null && Physics.SphereCast(ray, ray_radius, out hit, Mathf.Infinity, enemy_layer) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null)
         {
             Vector3 direction = player.transform.position - hit.transform.position;
 

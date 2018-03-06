@@ -99,6 +99,7 @@
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\CompositeEnemy.cs" />
     <Compile Include="Assets\Scripts\DamageDealer.cs" />
+    <Compile Include="Assets\Scripts\EnemyExplosion.cs" />
     <Compile Include="Assets\Scripts\EnemyHealth.cs" />
     <Compile Include="Assets\Scripts\EnemyTracker.cs" />
     <Compile Include="Assets\Scripts\FixedCamera.cs" />
