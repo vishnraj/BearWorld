@@ -7,12 +7,12 @@ public class FixedCamera : MonoBehaviour
     public GameObject player;
     public bool targeting = false;
     public float target_rotation_x;
+    public float targeting_y_diff;
 
     Vector3 behind_player = Vector3.zero;
     float distance = 20f;
     float y_diff = 2.0f;
-    float targeting_y_diff = 20.0f;
-
+    
     Rotation rt;
     ThirdPersonTargetingSystem tps;
     PlayerAttackController pac;
@@ -42,13 +42,13 @@ public class FixedCamera : MonoBehaviour
             Weapon.WEAPON_TYPE type = pac.weapon.GetWeaponType();
             switch (type) {
                 case Weapon.WEAPON_TYPE.MELEE:
-                    UpdateNonAimingTargetingCamera();
+                    UpdateNonRangeTargetingCamera();
                     break;
                 case Weapon.WEAPON_TYPE.RANGE:
-                    UpdateAimingTargetingCamera();
+                    UpdateRangeTargetingCamera();
                     break;
                 default:
-                    UpdateNonAimingTargetingCamera();
+                    UpdateNonRangeTargetingCamera();
                     break;
             }
         }
@@ -64,7 +64,7 @@ public class FixedCamera : MonoBehaviour
         transform.Rotate(Vector3.up, player_facing_angle);
     }
 
-    void UpdateAimingTargetingCamera() {
+    void UpdateRangeTargetingCamera() {
         if (tps.locked_on) {
             RotateCameraToPlayerForward();
         }
@@ -72,7 +72,7 @@ public class FixedCamera : MonoBehaviour
         transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
     }
 
-    void UpdateNonAimingTargetingCamera() {
+    void UpdateNonRangeTargetingCamera() {
         if (tps.locked_on) {
             RotateCameraToPlayerForward();
             transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + targeting_y_diff, player.transform.position.z + behind_player.z * distance);

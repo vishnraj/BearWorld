@@ -10,7 +10,7 @@ public class CompositeEnemy : MonoBehaviour {
 
         for (int i = 0; i < transform.childCount; ++i) {
             Transform child = transform.GetChild(i);
-            if (child.GetComponent<EnemyHealth>() != null) {
+            if (child.GetComponent<EnemyHealth>() != null && child.GetComponent<EnemyHealth>().enabled) {
                 contained_enemies.Add(child.gameObject);
             }
         }

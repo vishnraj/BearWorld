@@ -6,6 +6,7 @@ public class EnemyExplosion : MonoBehaviour {
     public float radius;
     public float power;
     public float upward;
+    public float parts_speed;
 
     bool exploded = false; // replace with state pattern later
     EnemyHealth h;
@@ -28,6 +29,23 @@ public class EnemyExplosion : MonoBehaviour {
     private void FixedUpdate() {
         if (!exploded && h.health <= 0) {
             Explode();
+        }
+
+        if (exploded) {
+            for (int i = 0; i < transform.childCount; ++i) {
+                Transform c = transform.GetChild(i);
+                EnemyHealth c_health = c.GetComponent<EnemyHealth>();
+                if (c_health == null) {
+                    continue;
+                }
+
+                Rigidbody rb = c.gameObject.GetComponent<Rigidbody>();
+                if (rb == null) {
+                    continue;
+                }
+
+                rb.velocity = rb.velocity.normalized * parts_speed;
+            }
         }
     }
 
@@ -56,14 +74,19 @@ public class EnemyExplosion : MonoBehaviour {
                 continue;
             }
 
-            rb.isKinematic = false;
-            //rb.useGravity = true;
             col.enabled = true;
+            col.material = (PhysicMaterial)Resources.Load("Prefabs/EnemyParts");
+
             c_health.enabled = true;
 
             rb.AddExplosionForce(power, transform.position, radius, upward);
+
+            rb.isKinematic = false;
         }
 
+        if(GetComponent<CompositeEnemy>() != null) {
+            GetComponent<CompositeEnemy>().enabled = true;
+        }
         exploded = true;
     }
 }

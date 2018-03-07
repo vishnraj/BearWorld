@@ -58,6 +58,7 @@ public class Inventory : MonoBehaviour {
     Transform ammo_icon;
     Transform ammo_remaining;
     GameObject highlighter;
+    GameObject current_target = null;
 
     PlayerAttackController pac;
     ThirdPersonTargetingSystem tps;
@@ -114,6 +115,8 @@ public class Inventory : MonoBehaviour {
         if (item_menu_on == true) {
             if (GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
                 GetComponent<XboxOneControllerThirdPersonMovement>().enabled = false;
+                //current_target = GetComponent<ThirdPersonTargetingSystem>().target; // in case player loses this
+                //GetComponent<ThirdPersonTargetingSystem>().enabled = false;                
             }
 
             if (equipped != null && equipped.GetComponent<BasicWeapon>().enabled) {
@@ -122,6 +125,10 @@ public class Inventory : MonoBehaviour {
         } else {
             if (!GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
                 GetComponent<XboxOneControllerThirdPersonMovement>().enabled = true;
+                //if (current_target != null) {
+                //    GetComponent<ThirdPersonTargetingSystem>().target = current_target;
+                //}
+                //GetComponent<ThirdPersonTargetingSystem>().enabled = true;
             }
 
             if (equipped != null && !equipped.GetComponent<BasicWeapon>().enabled) {
