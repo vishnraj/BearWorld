@@ -41,9 +41,9 @@ public class Inventory : MonoBehaviour {
     public GameObject HUD;
     public GameObject none;
     public Sprite selection;
+    public GameObject event_manager;
 
     Transform crosshair;
-    bool item_menu_on;
     bool switching = false;
     int current_inventory_index;
     int desired_equipped_index;
@@ -64,6 +64,147 @@ public class Inventory : MonoBehaviour {
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
     Weapon.WeaponFactory f;
+
+    public enum INVENTORY_STATE { DEFAULT, PAUSED};
+
+    INVENTORY_STATE s;
+
+    // Use this for initialization
+    private void Start() {
+        desired_equipped = "";
+        ammo_inventory = new Dictionary<string, Items.Ammo>();
+        menu_objects = new List<GameObject>();
+
+        tps = GetComponent<ThirdPersonTargetingSystem>();
+        pac = GetComponent<PlayerAttackController>();
+        c = GetComponent<BasicCharacter>();
+        f = new Weapon.WeaponFactory();
+
+        equipped_icon = HUD.transform.Find("EquippedIcon");
+        equipped_status = HUD.transform.Find("EquippedStatus");
+
+        ammo_icon = HUD.transform.Find("AmmoIcon");
+        ammo_remaining = HUD.transform.Find("AmmoRemaining");
+
+        crosshair = HUD.transform.Find("Crosshair");
+
+        max_items = 3;
+        desired_equipped_index = current_inventory_index = -1;
+
+        set_equipped_none();
+        set_ammo_none();
+
+        event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
+        s = INVENTORY_STATE.DEFAULT;
+    }
+
+    private void Awake() {
+        inventory = new List<string>();
+    }
+
+    // Update is called once per frame
+    private void Update() {
+        switch(s) {
+            case INVENTORY_STATE.PAUSED:
+                DoPausedUpdate();
+                break;
+            default:
+                DoDefaultUpdate();
+                break;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision) {
+        GameObject item = collision.collider.gameObject;
+        if (item != null && item.GetComponent<BasicWeapon>() != null) {
+            pick_up(item);
+        }
+    }
+
+    private void OnCollisionStay(Collision collision) {
+        GameObject item = collision.collider.gameObject;
+        if (item != null && item.GetComponent<BasicWeapon>() != null) {
+            pick_up(item);
+        }
+    }
+
+    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+        switch (e) {
+            case InputEvents.INPUT_EVENT.PAUSE: {
+                    if (GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
+                        GetComponent<XboxOneControllerThirdPersonMovement>().enabled = false;
+                        //current_target = GetComponent<ThirdPersonTargetingSystem>().target; // in case player loses this
+                        //GetComponent<ThirdPersonTargetingSystem>().enabled = false;                
+                    }
+
+                    if (equipped != null && equipped.GetComponent<BasicWeapon>().enabled) {
+                        DeactivateItem();
+                    }
+
+                    s = INVENTORY_STATE.PAUSED;
+                }
+                break;
+            case InputEvents.INPUT_EVENT.UNPAUSE: {
+                    // disgusting
+                    if (!GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
+                        GetComponent<XboxOneControllerThirdPersonMovement>().enabled = true;
+                        // this will eventually be removed as well as the above check (bad
+                        // to check a completleyl unrelated part, the movement aspect,
+                        // in this script - instead all of these types of things will
+                        // be handle by the global input state manager
+
+                        //if (current_target != null) {
+                        //    GetComponent<ThirdPersonTargetingSystem>().target = current_target;
+                        //}
+                        //GetComponent<ThirdPersonTargetingSystem>().enabled = true;
+                    }
+
+                    if (equipped != null && !equipped.GetComponent<BasicWeapon>().enabled) {
+                        ActivateItem();
+                    } else if (equipped == null && pac.enabled) {
+                        // in all honesty, this shouldn't be responsible for
+                        // handling updates to PAC when state changes, instead,
+                        // pac can listen for global input events and change
+                        // the internals of the weapon currently equipped to the player
+                        // so we can remove these messy checks
+                        DeactivateItem();
+                    }
+
+                    // we do this only when we are about to turn off the menu
+                    // as at this point the current_inventory_index will not
+                    // be used, so it will be safe to do so
+                    if (desired_equipped == "") {
+                        desired_equipped_index = current_inventory_index = -1; // for consistency
+                                                                               // we don't do anything
+                                                                               // with -1 case yet
+                    }
+
+                    s = INVENTORY_STATE.DEFAULT;
+                }
+                
+                break;
+            default:
+                break;
+        }
+    }
+
+    void DoDefaultUpdate() {
+        // When in action, we must keep the inventory up to date
+        // but the updating off this could be done better
+        // using pub/sub via observer - we can set this class
+        // to observer the different items that are currently
+        // in the player's possession
+        if (c.GetAmmoType() != null && ammo_inventory[equipped.name].ammo_amount != c.GetAmmoAmount()) {
+            ammo_inventory[equipped.name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
+            update_ammo_remaining();
+        }
+    }
+
+    void DoPausedUpdate() {
+        equip_item();
+        unequip_item();
+        update_equipped();
+    }
 
     public void set_current_index() {
         if (desired_equipped == "") {
@@ -98,9 +239,6 @@ public class Inventory : MonoBehaviour {
     }
 
     public void drop_item() {
-        if (!item_menu_on)
-            return;
-
         if (current_inventory_index < inventory.Count) {
             string dropped = inventory[current_inventory_index];
 
@@ -140,108 +278,7 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    // Use this for initialization
-    private void Start() {
-        desired_equipped = "";
-        ammo_inventory = new Dictionary<string, Items.Ammo>();
-        menu_objects = new List<GameObject>();
-
-        tps = GetComponent<ThirdPersonTargetingSystem>();
-        pac = GetComponent<PlayerAttackController>();
-        c = GetComponent<BasicCharacter>();
-        f = new Weapon.WeaponFactory();
-
-        equipped_icon = HUD.transform.Find("EquippedIcon");
-        equipped_status = HUD.transform.Find("EquippedStatus");
-
-        ammo_icon = HUD.transform.Find("AmmoIcon");
-        ammo_remaining = HUD.transform.Find("AmmoRemaining");
-
-        crosshair = HUD.transform.Find("Crosshair");
-
-        max_items = 3;
-        desired_equipped_index = current_inventory_index = -1;
-
-        set_equipped_none();
-        set_ammo_none();
-    }
-
-    private void Awake() {
-        inventory = new List<string>();
-    }
-
-    // Update is called once per frame
-    private void Update() {
-        // Most of these functions are checking for input
-        // They should therefore not be called here, only things
-        // that need to update the GUI, but even that can be handled
-        // via message communication -> input handler will send a message
-        // to this script, where the message can then be checked and the appropriate
-        // action leads to the function getting called - this also means we don't unecessarily
-        // call functions here, but can instead block in this script until we get the appropriate
-        // type of message to begin taking a particular course of action
-
-        toggle_item_menu();
-        equip_item();
-        unequip_item();
-        update_equipped();
-
-        // Update states of other parts of player
-        // and the equipped depending on state of this component
-        if (item_menu_on == true) {
-            if (GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
-                GetComponent<XboxOneControllerThirdPersonMovement>().enabled = false;
-                //current_target = GetComponent<ThirdPersonTargetingSystem>().target; // in case player loses this
-                //GetComponent<ThirdPersonTargetingSystem>().enabled = false;                
-            }
-
-            if (equipped != null && equipped.GetComponent<BasicWeapon>().enabled) {
-                DeactivateItem();
-            }
-        } else {
-            if (!GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
-                GetComponent<XboxOneControllerThirdPersonMovement>().enabled = true;
-                //if (current_target != null) {
-                //    GetComponent<ThirdPersonTargetingSystem>().target = current_target;
-                //}
-                //GetComponent<ThirdPersonTargetingSystem>().enabled = true;
-            }
-
-            if (equipped != null && !equipped.GetComponent<BasicWeapon>().enabled) {
-                ActivateItem();
-            } else if (equipped == null && pac.enabled) {
-                DeactivateItem();
-            }
-
-            // When in action, we must keep the inventory up to date
-            if (c.GetAmmoType() != null && ammo_inventory[equipped.name].ammo_amount != c.GetAmmoAmount()) {
-                ammo_inventory[equipped.name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
-                update_ammo_remaining();
-            }
-        }
-    }
-
-    private void OnCollisionEnter(Collision collision) {
-        GameObject item = collision.collider.gameObject;
-        if (item != null && item.GetComponent<BasicWeapon>() != null) {
-            pick_up(item);
-        }
-    }
-
-    private void OnCollisionStay(Collision collision) {
-        GameObject item = collision.collider.gameObject;
-        if (item != null && item.GetComponent<BasicWeapon>() != null) {
-            pick_up(item);
-        }
-    }
-
     private void pick_up(GameObject item) {
-        // can only happen during
-        // active game state
-        if (item_menu_on) {
-            return;
-        }
-
         if (Input.GetButton("X")) {
             if (item.name.Contains(" ")) {
                 item.name = item.name.Substring(0, item.name.LastIndexOf(" "));
@@ -290,38 +327,7 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    private void toggle_item_menu() {
-        if (Input.GetButtonDown("Start") && !item_menu_on) {
-            //Time.timeScale = 0; // pause game upon entering
-                                // menu
-
-            //display_items();
-            //select_item_on_menu();
-            item_menu_on = true;
-        } else if (Input.GetButtonDown("Start") && item_menu_on) {
-            //foreach (GameObject g in menu_objects) {
-            //    Destroy(g);
-            //}
-            //menu_objects.Clear();
-            //Destroy(highlighter);
-            item_menu_on = false;
-
-            if (desired_equipped == "") {
-                desired_equipped_index = current_inventory_index = -1; // for consistency
-                                                               // we don't do anything
-                                                               // with -1 case yet
-            }
-
-            //Time.timeScale = 1; // start game upon exiting
-                                // menu
-        }
-    }
-
     private void equip_item() {
-        if (!item_menu_on) {
-            return;
-        }
-
         if (Input.GetButtonDown("A")) {
             if (inventory.Count != 0 && current_inventory_index < inventory.Count) {
                 desired_equipped = inventory[current_inventory_index];
@@ -350,10 +356,6 @@ public class Inventory : MonoBehaviour {
     }
 
     private void unequip_item() {
-        if (!item_menu_on) {
-            return;
-        }
-
         if (Input.GetButtonDown("B")) {
             desired_equipped = "";
             set_ammo_none();

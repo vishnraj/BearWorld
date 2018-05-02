@@ -13,7 +13,6 @@ public class ItemUI : MonoBehaviour {
     public int max_items;
     public float offset_x;
 
-    bool item_menu_on = false; // this is going to change to a state
     bool switching = false;
     float start_location_x;
     float start_location_y;
@@ -38,29 +37,38 @@ public class ItemUI : MonoBehaviour {
         start_location_y = equipped_icon.position.y;
         start_location_z = transform.parent.GetComponent<RectTransform>().transform.position.z;
 
-        event_manager.GetComponent<InputManager>().publisher.InputEvent += TestCallBack;
-        event_manager.GetComponent<InputManager>().publisher.InputEvent += MenuCallback;
+        event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
+        enabled = false;
     }
-	
+
 	// Update is called once per frame
 	void Update () {
-		if (item_menu_on) {
-            cycle_through_items();
-        }
+        // clean, somewhat state driven, though
+        // since we don't do anything in the non-pause
+        // state, we just let script enable to control this
+        // in other cases, where it's not binary states, 
+        // we will use a a set of internal states
+        // to govern what an update looks like
+        cycle_through_items();
+        drop_item();
 	}
 
-    void TestCallBack(object sender, InputEvents.INPUT_EVENT e) {
-        Debug.Log("here");
-    }
-
-    void MenuCallback(object sender, InputEvents.INPUT_EVENT e) {
+    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
         switch (e) {
-            case INPUT_EVENT.START :
-                toggle_item_menu();
+            case INPUT_EVENT.PAUSE: {
+                    display_items();
+                    select_item_on_menu(); // hightlight the first item in the list
+                    enabled = true;
+                }
                 break;
-            case INPUT_EVENT.X: {
-                    inventory_system.drop_item();
-                    refresh_menu();
+            case INPUT_EVENT.UNPAUSE: {
+                    // cleanup time
+                    foreach (GameObject g in menu_objects) {
+                        Destroy(g);
+                    }
+                    menu_objects.Clear();
+                    Destroy(highlighter);
+                    enabled = false;
                 }
                 break;
             default :
@@ -68,36 +76,19 @@ public class ItemUI : MonoBehaviour {
         }
     }
 
-    private void refresh_menu() {
-        if (!item_menu_on)
-            return;
+    void drop_item() {
+        if (Input.GetButtonDown("X")) {
+            inventory_system.drop_item();
+            refresh_menu();
+        }
+    }
 
+    private void refresh_menu() {
         foreach (GameObject g in menu_objects) {
             Destroy(g);
         }
         menu_objects.Clear();
         display_items();
-    }
-
-    private void toggle_item_menu() {
-        if (!item_menu_on) {
-            Time.timeScale = 0; // pause game upon entering
-                                // menu
-
-            display_items();
-            select_item_on_menu();
-            item_menu_on = true;
-        } else { 
-            foreach (GameObject g in menu_objects) {
-                Destroy(g);
-            }
-            menu_objects.Clear();
-            Destroy(highlighter);
-            item_menu_on = false;
-
-            Time.timeScale = 1; // start game upon exiting
-                                // menu
-        }
     }
 
     private void deselect_item_on_menu() {
@@ -182,10 +173,6 @@ public class ItemUI : MonoBehaviour {
     }
 
     private void cycle_through_items() {
-        if (!item_menu_on) {
-            return;
-        }
-
         if (Input.GetAxis("D-PadXAxis") > 0 && !switching) {
             deselect_item_on_menu();
 
