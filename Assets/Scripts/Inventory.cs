@@ -131,43 +131,21 @@ public class Inventory : MonoBehaviour {
     void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
         switch (e) {
             case InputEvents.INPUT_EVENT.PAUSE: {
-                    if (GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
-                        GetComponent<XboxOneControllerThirdPersonMovement>().enabled = false;
-                        //current_target = GetComponent<ThirdPersonTargetingSystem>().target; // in case player loses this
-                        //GetComponent<ThirdPersonTargetingSystem>().enabled = false;                
-                    }
-
-                    if (equipped != null && equipped.GetComponent<BasicWeapon>().enabled) {
+                    if (equipped != null) {
                         DeactivateItem();
                     }
-
                     s = INVENTORY_STATE.PAUSED;
                 }
                 break;
             case InputEvents.INPUT_EVENT.UNPAUSE: {
-                    // disgusting
-                    if (!GetComponent<XboxOneControllerThirdPersonMovement>().enabled) {
-                        GetComponent<XboxOneControllerThirdPersonMovement>().enabled = true;
-                        // this will eventually be removed as well as the above check (bad
-                        // to check a completleyl unrelated part, the movement aspect,
-                        // in this script - instead all of these types of things will
-                        // be handle by the global input state manager
-
-                        //if (current_target != null) {
-                        //    GetComponent<ThirdPersonTargetingSystem>().target = current_target;
-                        //}
-                        //GetComponent<ThirdPersonTargetingSystem>().enabled = true;
-                    }
-
-                    if (equipped != null && !equipped.GetComponent<BasicWeapon>().enabled) {
+                    // The only reason we do this here
+                    // is because order matters (this
+                    // engine sets order for components 
+                    // at runtime and this order changes
+                    // between runs, so we need this to
+                    // make sure controller sees weapon
+                    if (equipped != null) {
                         ActivateItem();
-                    } else if (equipped == null && pac.enabled) {
-                        // in all honesty, this shouldn't be responsible for
-                        // handling updates to PAC when state changes, instead,
-                        // pac can listen for global input events and change
-                        // the internals of the weapon currently equipped to the player
-                        // so we can remove these messy checks
-                        DeactivateItem();
                     }
 
                     // we do this only when we are about to turn off the menu

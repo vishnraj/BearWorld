@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using Utility;
+using InputEvents;
 
 public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 {
     public GameObject main_camera;
+    public GameObject event_manager;
     public bool move = false;
 
     float movementSpeed = 100f;
@@ -20,7 +22,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void Start()
     {
-        
+        event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
     }
 
     void Awake()
@@ -31,6 +33,21 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         tps = GetComponent<ThirdPersonTargetingSystem>();
         pac = GetComponent<PlayerAttackController>();
+    }
+
+    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+        switch (e) {
+            case INPUT_EVENT.PAUSE: {
+                    enabled = false;
+                }
+                break;
+            case INPUT_EVENT.UNPAUSE: {
+                    enabled = true;
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     void Update()
