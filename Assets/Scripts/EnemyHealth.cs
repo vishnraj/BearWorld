@@ -6,6 +6,8 @@ public class EnemyHealth : BasicHealth
 {
     public List<string> random_drop_list;
 
+    Camera cam; // this shittiness will be removed eventually, as we update more things to use events - eventually the piece that needs this
+                // will be moved into the UI code, so this will not have to be used here anymore to create UI elements
     GameObject HUD;
     GameObject player;
     GameObject enemies;
@@ -18,6 +20,7 @@ public class EnemyHealth : BasicHealth
         HUD = GameObject.Find("HUD");
         player = GameObject.Find("Bear"); // things related to player should be communicated via messages
         enemies = GameObject.Find("Enemies");
+        cam = GameObject.Find("Main Camera").GetComponent<Camera>();
 
         enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
 
@@ -81,7 +84,7 @@ public class EnemyHealth : BasicHealth
         Text health_text = health_remaining.GetComponent<Text>();
         health_text.text = health.ToString();
 
-        Vector2 enemy_screen_point = player.GetComponent<ThirdPersonTargetingSystem>().main_camera.WorldToViewportPoint(transform.position);
+        Vector2 enemy_screen_point = cam.WorldToViewportPoint(transform.position);
         RectTransform hud_rect = HUD.GetComponent<RectTransform>();
         Vector2 enemy_health_position = new Vector2(
         ((enemy_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.46f)),

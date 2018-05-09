@@ -27,6 +27,24 @@ namespace Items {
     }
 }
 
+namespace InventoryEvents {
+    public enum INVENTORY_EVENT { EQUIP, UNEQUIP };
+
+    public class InventoryPublisher {
+        public delegate void InventoryEventHandler(object sender, INVENTORY_EVENT e);
+        public event InventoryEventHandler InventoryEvent;
+
+        public void OnInventoryEvent(INVENTORY_EVENT e) {
+            InventoryEventHandler i = InventoryEvent;
+            if (i != null) {
+                i(this, e);
+            } else {
+                Debug.Log("NOOP");
+            }
+        }
+    }
+}
+
 // Will determine how items are picked up and assigned 
 // to player later as well as notifying other systems
 // about these items 
@@ -42,6 +60,8 @@ public class Inventory : MonoBehaviour {
     public GameObject none;
     public Sprite selection;
     public GameObject event_manager;
+
+    public InventoryEvents.InventoryPublisher publisher;
 
     Transform crosshair;
     bool switching = false;
@@ -65,9 +85,8 @@ public class Inventory : MonoBehaviour {
     BasicCharacter c;
     Weapon.WeaponFactory f;
 
-    public enum INVENTORY_STATE { DEFAULT, PAUSED};
-
-    INVENTORY_STATE s;
+    public delegate void DoUpdate();
+    DoUpdate update;
 
     // Use this for initialization
     private void Start() {
@@ -95,23 +114,17 @@ public class Inventory : MonoBehaviour {
         set_ammo_none();
 
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
-        s = INVENTORY_STATE.DEFAULT;
+        update = DefaultUpdate;
     }
 
     private void Awake() {
         inventory = new List<string>();
+        publisher = new InventoryEvents.InventoryPublisher();
     }
 
     // Update is called once per frame
     private void Update() {
-        switch(s) {
-            case INVENTORY_STATE.PAUSED:
-                DoPausedUpdate();
-                break;
-            default:
-                DoDefaultUpdate();
-                break;
-        }
+        update();
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -134,7 +147,8 @@ public class Inventory : MonoBehaviour {
                     if (equipped != null) {
                         DeactivateItem();
                     }
-                    s = INVENTORY_STATE.PAUSED;
+
+                    update = PausedUpdate;
                 }
                 break;
             case InputEvents.INPUT_EVENT.UNPAUSE: {
@@ -157,7 +171,7 @@ public class Inventory : MonoBehaviour {
                                                                                // with -1 case yet
                     }
 
-                    s = INVENTORY_STATE.DEFAULT;
+                    update = DefaultUpdate;
                 }
                 
                 break;
@@ -166,7 +180,7 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    void DoDefaultUpdate() {
+    void DefaultUpdate() {
         // When in action, we must keep the inventory up to date
         // but the updating off this could be done better
         // using pub/sub via observer - we can set this class
@@ -178,7 +192,7 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    void DoPausedUpdate() {
+    void PausedUpdate() {
         equip_item();
         unequip_item();
         update_equipped();
@@ -382,7 +396,7 @@ public class Inventory : MonoBehaviour {
                 Debug.LogError("We had an issue generating the asset preview");
             }
 
-            crosshair.GetComponent<AimingSystem>().enabled = true;
+            publisher.OnInventoryEvent(InventoryEvents.INVENTORY_EVENT.EQUIP);
         }
     }
 
@@ -397,9 +411,12 @@ public class Inventory : MonoBehaviour {
             Debug.LogError("We had an issue generating the asset preview");
         }
 
-        crosshair.GetComponent<AimingSystem>().enabled = false;
+        if (equipped != null) {
+            publisher.OnInventoryEvent(InventoryEvents.INVENTORY_EVENT.UNEQUIP);
 
-        Destroy(equipped);
+            Destroy(equipped);
+            equipped = null;
+        }
     }
 
     private void set_ammo_none() {

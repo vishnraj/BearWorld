@@ -3,6 +3,25 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using Utility;
+using InputEvents;
+
+namespace TargetingEvents {
+    public enum TARGETING_EVENT{ FREE, LOCK_ON };
+
+    public class TargetingPublisher {
+        public delegate void TargetingEventHandler(object sender, TARGETING_EVENT e);
+        public event TargetingEventHandler TargetingEvent;
+
+        public void OnTargetingEvent(TARGETING_EVENT e) {
+            TargetingEventHandler i = TargetingEvent;
+            if (i != null) {
+                i(this, e);
+            } else {
+                Debug.Log("NOOP");
+            }
+        }
+    }
+}
 
 public class ThirdPersonTargetingSystem : MonoBehaviour
 {
@@ -16,12 +35,15 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     public GameObject target = null;
     public GameObject HUD;
     public GameObject Enemies;
-    public Camera main_camera;
+    public GameObject event_manager;
     public SortedList sorted_by_chosen_direction; // targets sorted by closest distance to current target
                                                   // as well as closeness of the angle of the vector to new target
                                                   // to the angle created by the joystick's coordinates
                                                   // if there is a target, otherwise just sorts using InstanceIDs
                                                   // in ascending order
+
+    public TargetingEvents.TargetingPublisher publisher;
+
     float input_x = 0.0f;
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
@@ -29,7 +51,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     Vector3 previous_target_pos;
 
-    GameObject targeting_icon;
     Transform targeting_status;
     Transform crosshair;
 
@@ -37,24 +58,16 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     Rotation rt;
     BasicCharacter c;
 
+    public delegate void DoUpdate();
+    DoUpdate update;
+
     // Use this for initialization
     void Start()
     {
         targeting_status = HUD.transform.Find("TargetingStatus");
         crosshair = HUD.transform.Find("Crosshair");
-        targeting_icon = new GameObject();
-
-        // Terrible, think this should all be controlled in the crosshair, but communicated
-        // from this script via event queue and message passing
-        targeting_icon.AddComponent<Image>();
-        targeting_icon.GetComponent<Image>().sprite = HUD.transform.Find("Crosshair").GetComponent<AimingSystem>().target_reticle;
-        targeting_icon.name = "TargetingIcon";
-
-        float desired_scale = .4f;
 
         previous_target_pos = new Vector3();
-
-        targeting_icon.GetComponent<Image>().transform.localScale = new Vector3(desired_scale, desired_scale, desired_scale);
 
         compare_distances = new CloseCompare(this);
         sorted_by_chosen_direction = new SortedList(compare_distances);
@@ -62,71 +75,82 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         rt = new Rotation();
         c = GetComponent<BasicCharacter>();
 
+        event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
+
         // Call once to set to default state
         UpdateTargetingStatus();
+        update = DefaultUpdate;
+    }
+
+    private void Awake() {
+        publisher = new TargetingEvents.TargetingPublisher();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (target != null)
-        {
+        update();
+    }
+
+    void PausedUpdate() {
+        if (target == null) {
+            DisableLockedOn();
+            can_lock_on = false;
+            UpdateTargetingStatus();
+
+            c.SetTarget(direction); // this may not actually be needed
+        }
+    }
+
+    void DefaultUpdate() {
+        if (target != null) {
             // This all needs to be handled via  state class
             // because this has become unruly garbage
 
             Vector3 to_target = target.transform.position - transform.position;
 
-            if (!locked_on)
-            {
+            if (!locked_on) {
                 can_lock_on = true;
                 UpdateTargetingStatus();
             }
 
-            if (can_lock_on && Input.GetAxis("LeftTriggerAxis") > 0 && !locked_on)
-            {
+            if (can_lock_on && Input.GetAxis("LeftTriggerAxis") > 0 && !locked_on) {
                 locked_on = true;
                 UpdateTargetingStatus();
-                crosshair.GetComponent<Image>().enabled = false;
-                crosshair.GetComponent<AimingSystem>().enabled = false;
-            }
-            else if (Input.GetAxis("LeftTriggerAxis") == 0 && locked_on)
-            {
+
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.LOCK_ON);
+
+            } else if (Input.GetAxis("LeftTriggerAxis") == 0 && locked_on) {
                 locked_on = false;
                 UpdateTargetingStatus();
-                crosshair.GetComponent<AimingSystem>().enabled = true;
+
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
             }
 
-            if (locked_on && to_target.magnitude <= current_weapon_range)
-            {
-                SetTargetOnGui();
-            }
-            else
-            {
+            if (!(locked_on && to_target.magnitude <= current_weapon_range)) {
                 DisableLockedOn();
             }
 
             // user input related
-            if ( locked_on && (Input.GetAxis("RightJoystickX") != 0 || Input.GetAxis("RightJoystickY") != 0) && !switching )
-            {
+            if (locked_on && (Input.GetAxis("RightJoystickX") != 0 || Input.GetAxis("RightJoystickY") != 0) && !switching) {
                 switching = true;
                 SetNewTarget();
             }
 
-            if ( locked_on && (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0) && switching )
-            {
+            if (locked_on && (Input.GetAxis("RightJoystickX") == 0 && Input.GetAxis("RightJoystickY") == 0) && switching) {
                 switching = false;
             }
 
             // This is stupid, but for some reason unity, after confirming that in this frame
             // this object exists, seems to show that this is null, even though state of all objects shouldn't get updated until
-            // the next loop, which means we can't be here to begin with
+            // the next loop, which means we can't be here to begin with - I now believe this has more to do with the fact that
+            // Unity will run the updates in random order, so it's not guaranteed that we will always be able to rely on state
+            // that is set within a different script -> we need to force order within each script
             if (target != null) {
                 c.SetTarget(target.transform.position);
                 previous_target_pos = target.transform.position;
             }
-        }
-        else
-        {
+        } else {
             // This type of behavior needs to be divided
             // up into states for when locked on vs not locked on
             if (locked_on) {
@@ -136,11 +160,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 if (target != null) {
                     Vector3 to_target = target.transform.position - transform.position;
                     if (to_target.magnitude <= current_weapon_range) {
-                        c.SetTarget(target.transform.position);
-                        SetTargetOnGui();
-                        // rest of information set above, as part of targeting state,
-                        // but this will be much cleaner once this section just controls
-                        // the state of the class as a different class vs control flow
+                        c.SetTarget(target.transform.position); // now aiming system will update based on this
                     } else {
                         DisableLockedOn();
                     }
@@ -149,17 +169,27 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 }
             }
 
-            // leftover, will be done correctly with states
-            // but for now this a piece that remains enabled if
-            // targeting is lost and we didt't remove it earlier
-            //if (targeting_icon.GetComponent<Image>().enabled) {
-            //    targeting_icon.GetComponent<Image>().enabled = false;
-            //}
-
             can_lock_on = false;
             UpdateTargetingStatus();
 
             c.SetTarget(direction);
+        }
+    }
+
+    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+        switch (e) {
+            case INPUT_EVENT.PAUSE: {
+                    update = PausedUpdate; // this is actually required
+                                           // we need to update GUI elements (directly for now)
+                                           // if we unequip an item and thus lose the target
+                }
+                break;
+            case INPUT_EVENT.UNPAUSE: {
+                    update = DefaultUpdate;
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -180,9 +210,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         locked_on = false;
         switching = false;
 
-        crosshair.GetComponent<AimingSystem>().enabled = true;
-        
-        targeting_icon.GetComponent<Image>().enabled = false;
+        publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
 
         UpdateTargetingStatus();
     }
@@ -204,28 +232,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Can't Lock";
             targeting_status.gameObject.GetComponent<Text>().color = new Color(0, 0, 255);
         }
-    }
-
-    void SetTargetOnGui()
-    {
-        if (!targeting_icon.GetComponent<Image>().enabled)
-        {
-            targeting_icon.GetComponent<Image>().enabled = true;
-            targeting_icon.GetComponent<Image>().sprite = HUD.transform.Find("Crosshair").GetComponent<AimingSystem>().target_reticle;
-        }
-
-        Vector2 target_screen_point = main_camera.WorldToViewportPoint(target.transform.position);
-        RectTransform hud_rect = HUD.GetComponent<RectTransform>();
-        Vector2 targeting_icon_position = new Vector2(
-        ((target_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.5f)),
-        ((target_screen_point.y * hud_rect.sizeDelta.y) - (hud_rect.sizeDelta.y * 0.5f)));
-
-        if (!(targeting_icon.transform.parent == HUD.transform))
-        {
-            targeting_icon.transform.SetParent(HUD.transform);
-        }
-
-        targeting_icon.GetComponent<RectTransform>().anchoredPosition = targeting_icon_position;
     }
 
     void SetNewTarget()
