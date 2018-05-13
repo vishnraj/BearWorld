@@ -3,8 +3,6 @@
 public class SwordAttack : BasicWeapon {
     SwordDamage blade;
 
-    int current_sequence = 0;
-
     // Use this for initialization
     void Start() {
         blade = transform.Find("Blade").GetComponent<SwordDamage>();

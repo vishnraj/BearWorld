@@ -6,7 +6,7 @@ using Utility;
 using InputEvents;
 
 namespace TargetingEvents {
-    public enum TARGETING_EVENT{ FREE, LOCK_ON };
+    public enum TARGETING_EVENT{ INIT, FREE, CAN_LOCK, LOCK_ON };
 
     public class TargetingPublisher {
         public delegate void TargetingEventHandler(object sender, TARGETING_EVENT e);
@@ -33,7 +33,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     public Vector3 direction;
     public GameObject target = null;
-    public GameObject HUD;
     public GameObject Enemies;
     public GameObject event_manager;
     public SortedList sorted_by_chosen_direction; // targets sorted by closest distance to current target
@@ -41,18 +40,15 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                                                   // to the angle created by the joystick's coordinates
                                                   // if there is a target, otherwise just sorts using InstanceIDs
                                                   // in ascending order
-
     public TargetingEvents.TargetingPublisher publisher;
 
+    bool start = false;
     float input_x = 0.0f;
     float input_y = 0.0f;
     float current_joystick_angle = 0.0f;
     float margin_of_error = 5.0f;
 
     Vector3 previous_target_pos;
-
-    Transform targeting_status;
-    Transform crosshair;
 
     CloseCompare compare_distances;
     Rotation rt;
@@ -64,9 +60,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        targeting_status = HUD.transform.Find("TargetingStatus");
-        crosshair = HUD.transform.Find("Crosshair");
-
         previous_target_pos = new Vector3();
 
         compare_distances = new CloseCompare(this);
@@ -77,8 +70,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
 
-        // Call once to set to default state
-        UpdateTargetingStatus();
         update = DefaultUpdate;
     }
 
@@ -89,6 +80,11 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!start) {
+            publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.INIT);
+            start = true;
+        }
+
         update();
     }
 
@@ -96,9 +92,20 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         if (target == null) {
             DisableLockedOn();
             can_lock_on = false;
-            UpdateTargetingStatus();
+
+            publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
 
             c.SetTarget(direction); // this may not actually be needed
+        } else {
+            Vector3 to_target = target.transform.position - transform.position;
+
+            if (locked_on && !(to_target.magnitude <= current_weapon_range)) {
+                DisableLockedOn();
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+            } else if (!locked_on && to_target.magnitude <= current_weapon_range) {
+                can_lock_on = true;
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
+            }
         }
     }
 
@@ -107,28 +114,25 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             // This all needs to be handled via  state class
             // because this has become unruly garbage
 
-            Vector3 to_target = target.transform.position - transform.position;
-
-            if (!locked_on) {
-                can_lock_on = true;
-                UpdateTargetingStatus();
-            }
-
             if (can_lock_on && Input.GetAxis("LeftTriggerAxis") > 0 && !locked_on) {
                 locked_on = true;
-                UpdateTargetingStatus();
 
                 publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.LOCK_ON);
 
             } else if (Input.GetAxis("LeftTriggerAxis") == 0 && locked_on) {
                 locked_on = false;
-                UpdateTargetingStatus();
 
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
             }
 
-            if (!(locked_on && to_target.magnitude <= current_weapon_range)) {
+            Vector3 to_target = target.transform.position - transform.position;
+
+            if (locked_on && !(to_target.magnitude <= current_weapon_range)) {
                 DisableLockedOn();
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+            } else if (!locked_on && to_target.magnitude <= current_weapon_range) {
+                can_lock_on = true;
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
             }
 
             // user input related
@@ -161,6 +165,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                     Vector3 to_target = target.transform.position - transform.position;
                     if (to_target.magnitude <= current_weapon_range) {
                         c.SetTarget(target.transform.position); // now aiming system will update based on this
+                        return;
                     } else {
                         DisableLockedOn();
                     }
@@ -169,14 +174,16 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                 }
             }
 
-            can_lock_on = false;
-            UpdateTargetingStatus();
+            if (can_lock_on) {
+                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+            }
 
+            can_lock_on = false;
             c.SetTarget(direction);
         }
     }
 
-    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
         switch (e) {
             case INPUT_EVENT.PAUSE: {
                     update = PausedUpdate; // this is actually required
@@ -209,29 +216,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     void DisableLockedOn() {
         locked_on = false;
         switching = false;
-
-        publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
-
-        UpdateTargetingStatus();
-    }
-
-    void UpdateTargetingStatus()
-    {
-        if (can_lock_on && !locked_on)
-        {
-            targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Can Lock";
-            targeting_status.gameObject.GetComponent<Text>().color = new Color(.49f, 1f, 0f);
-        }
-        else if (locked_on)
-        {
-            targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Locked";
-            targeting_status.gameObject.GetComponent<Text>().color = new Color(255, 0, 0);
-        }
-        else
-        {
-            targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Can't Lock";
-            targeting_status.gameObject.GetComponent<Text>().color = new Color(0, 0, 255);
-        }
     }
 
     void SetNewTarget()
@@ -288,16 +272,16 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             //Debug.Log("Selected Target ID: " + sorted_by_chosen_direction.GetByIndex(0));
 			new_target = (GameObject)sorted_by_chosen_direction.GetKey(0);
 
-			Vector3 player_forward = new Vector3(transform.forward.x, 0, transform.forward.z);
+			// Vector3 player_forward = new Vector3(transform.forward.x, 0, transform.forward.z);
 
-			Vector3 to_new_target = new_target.transform.position - target.transform.position;
-			float angle_to_new_target = rt.CalculateZXRotation(new Vector3(to_new_target.x, 0, to_new_target.z), player_forward);
+			// Vector3 to_new_target = new_target.transform.position - target.transform.position;
+			// float angle_to_new_target = rt.CalculateZXRotation(new Vector3(to_new_target.x, 0, to_new_target.z), player_forward);
 			//Debug.Log("angle_to_new_target: " + angle_to_new_target);
 
 			// Cos is calculated on y because z is effectively y
 			// in our coordinate system
-			float new_target_x_unit = Mathf.Sin(Mathf.Deg2Rad * angle_to_new_target);
-			float new_target_y_unit = Mathf.Cos(Mathf.Deg2Rad * angle_to_new_target);
+			// new_target_x_unit = Mathf.Sin(Mathf.Deg2Rad * angle_to_new_target);
+			// new_target_y_unit = Mathf.Cos(Mathf.Deg2Rad * angle_to_new_target);
 
 			/*
 			Debug.Log("input x: " + input_x);

@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using InputEvents;
@@ -53,7 +52,7 @@ public class ItemUI : MonoBehaviour {
         drop_item();
 	}
 
-    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
         switch (e) {
             case INPUT_EVENT.PAUSE: {
                     display_items();

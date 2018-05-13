@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEngine.UI;
 using TargetingEvents;
 using InventoryEvents;
@@ -23,7 +22,6 @@ public class AimingSystem : MonoBehaviour
 
     GameObject targeting_icon;
     ThirdPersonTargetingSystem tps;
-    BasicCharacter c;
 
     public delegate void DoUpdate();
     DoUpdate update;
@@ -43,7 +41,6 @@ public class AimingSystem : MonoBehaviour
         targeting_icon.GetComponent<Image>().transform.localScale = new Vector3(desired_scale, desired_scale, desired_scale);
 
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
-        c = player.GetComponent<BasicCharacter>();
 
         player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent += TargetingEventCallback;
         player.GetComponent<Inventory>().publisher.InventoryEvent += InventoryEventCallback;
@@ -102,14 +99,14 @@ public class AimingSystem : MonoBehaviour
         }
     }
 
-
-    void TargetingEventCallback(object sender, TargetingEvents.TARGETING_EVENT e) {
+    void TargetingEventCallback(object sender, TARGETING_EVENT e) {
         switch (e) {
+            case TARGETING_EVENT.CAN_LOCK:
             case TARGETING_EVENT.FREE: {
                     // as a fallback, unless this is enabled,
                     // don't do anything - this is because there is a function
-                    // in third person targeting that my still send this out
-                    // and it's a general even so each componenent must handle it
+                    // in third person targeting that may still send this out
+                    // and in general every componenent must handle it
                     // the way that is best for them
                     if (enabled) {
                         crosshair.GetComponent<Image>().enabled = true;
@@ -133,7 +130,7 @@ public class AimingSystem : MonoBehaviour
         }
     }
 
-    void InventoryEventCallback(object sender, InventoryEvents.INVENTORY_EVENT e) {
+    void InventoryEventCallback(object data, INVENTORY_EVENT e) {
         switch (e) {
             case INVENTORY_EVENT.EQUIP: {
                     // we won't do anything if we are already enabled

@@ -23,9 +23,6 @@ public class AssetPreviewGenerator : MonoBehaviour {
                 System.Threading.Thread.Sleep(15);
             }
 #endif
-            Sprite s = null;
-            s = Sprite.Create(t, new Rect(0, 0, 128, 128), new Vector2());
-
             FileStream file;
             string destination = Application.dataPath + "/Resources/Sprites/" + g.name + ".png";
             if (!File.Exists(destination)) {

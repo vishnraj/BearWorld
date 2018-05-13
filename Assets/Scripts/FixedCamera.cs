@@ -79,7 +79,7 @@ public class FixedCamera : MonoBehaviour
             transform.Rotate(target_rotation_x, 0, 0);
             targeting = true;
         } else {
-            if (targeting) {
+            if (targeting && transform.rotation.x != 0) {
                 transform.Rotate(-target_rotation_x, 0, 0);
                 targeting = false;
             }

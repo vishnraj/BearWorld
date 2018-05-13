@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using InputEvents;
 
 namespace Items {
     public class Ammo {
@@ -28,16 +29,15 @@ namespace Items {
 }
 
 namespace InventoryEvents {
-    public enum INVENTORY_EVENT { EQUIP, UNEQUIP };
+    public enum INVENTORY_EVENT { INIT, EQUIP, UNEQUIP, SET_AMMO, UNSET_AMMO, UPDATE_AMMO_AMOUNT };
 
     public class InventoryPublisher {
-        public delegate void InventoryEventHandler(object sender, INVENTORY_EVENT e);
+        public delegate void InventoryEventHandler(object data, INVENTORY_EVENT e);
         public event InventoryEventHandler InventoryEvent;
 
-        public void OnInventoryEvent(INVENTORY_EVENT e) {
-            InventoryEventHandler i = InventoryEvent;
-            if (i != null) {
-                i(this, e);
+        public void OnInventoryEvent(object data, INVENTORY_EVENT e) {
+            if (InventoryEvent != null) {
+                InventoryEvent(data, e);
             } else {
                 Debug.Log("NOOP");
             }
@@ -51,34 +51,16 @@ namespace InventoryEvents {
 public class Inventory : MonoBehaviour {
     public int max_items;
     public float offset_x;
-
     public string desired_equipped;
-
     public GameObject equipped = null;
-
-    public GameObject HUD;
-    public GameObject none;
-    public Sprite selection;
     public GameObject event_manager;
-
     public InventoryEvents.InventoryPublisher publisher;
 
-    Transform crosshair;
-    bool switching = false;
+    bool start = false;
     int current_inventory_index;
     int desired_equipped_index;
-    float start_location_x;
-    float start_location_y;
-    float start_location_z;
     List<string> inventory;
     Dictionary<string, Items.Ammo> ammo_inventory;
-    List<GameObject> menu_objects;
-    Transform equipped_icon;
-    Transform equipped_status;
-    Transform ammo_icon;
-    Transform ammo_remaining;
-    GameObject highlighter;
-    GameObject current_target = null;
 
     PlayerAttackController pac;
     ThirdPersonTargetingSystem tps;
@@ -92,26 +74,16 @@ public class Inventory : MonoBehaviour {
     private void Start() {
         desired_equipped = "";
         ammo_inventory = new Dictionary<string, Items.Ammo>();
-        menu_objects = new List<GameObject>();
 
         tps = GetComponent<ThirdPersonTargetingSystem>();
         pac = GetComponent<PlayerAttackController>();
         c = GetComponent<BasicCharacter>();
         f = new Weapon.WeaponFactory();
 
-        equipped_icon = HUD.transform.Find("EquippedIcon");
-        equipped_status = HUD.transform.Find("EquippedStatus");
-
-        ammo_icon = HUD.transform.Find("AmmoIcon");
-        ammo_remaining = HUD.transform.Find("AmmoRemaining");
-
-        crosshair = HUD.transform.Find("Crosshair");
-
-        max_items = 3;
         desired_equipped_index = current_inventory_index = -1;
 
-        set_equipped_none();
-        set_ammo_none();
+        c.SetAmmoAmount(0);
+        c.SetAmmoType(null);
 
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         update = DefaultUpdate;
@@ -124,6 +96,11 @@ public class Inventory : MonoBehaviour {
 
     // Update is called once per frame
     private void Update() {
+        if (!start) {
+            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.INIT);
+            start = true;
+        }
+
         update();
     }
 
@@ -141,9 +118,9 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
         switch (e) {
-            case InputEvents.INPUT_EVENT.PAUSE: {
+            case INPUT_EVENT.PAUSE: {
                     if (equipped != null) {
                         DeactivateItem();
                     }
@@ -151,24 +128,13 @@ public class Inventory : MonoBehaviour {
                     update = PausedUpdate;
                 }
                 break;
-            case InputEvents.INPUT_EVENT.UNPAUSE: {
-                    // The only reason we do this here
-                    // is because order matters (this
-                    // engine sets order for components 
-                    // at runtime and this order changes
-                    // between runs, so we need this to
-                    // make sure controller sees weapon
+            case INPUT_EVENT.UNPAUSE: {
                     if (equipped != null) {
                         ActivateItem();
                     }
 
-                    // we do this only when we are about to turn off the menu
-                    // as at this point the current_inventory_index will not
-                    // be used, so it will be safe to do so
                     if (desired_equipped == "") {
-                        desired_equipped_index = current_inventory_index = -1; // for consistency
-                                                                               // we don't do anything
-                                                                               // with -1 case yet
+                        desired_equipped_index = current_inventory_index = -1;
                     }
 
                     update = DefaultUpdate;
@@ -188,7 +154,7 @@ public class Inventory : MonoBehaviour {
         // in the player's possession
         if (c.GetAmmoType() != null && ammo_inventory[equipped.name].ammo_amount != c.GetAmmoAmount()) {
             ammo_inventory[equipped.name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
-            update_ammo_remaining();
+            publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
         }
     }
 
@@ -236,18 +202,16 @@ public class Inventory : MonoBehaviour {
 
             if (desired_equipped_index == current_inventory_index) {
                 desired_equipped = "";
-                desired_equipped_index = -1; // consistency
+                desired_equipped_index = -1;
 
-                // Unequip the item effectively
-                // If it is the one that we are dropping
-                set_ammo_none();
+                c.SetAmmoAmount(0);
+                c.SetAmmoType(null);
+
                 set_equipped_none();
             }
 
             inventory.RemoveAt(current_inventory_index);
 
-            // need to refind the desired_equipped item
-            // if it has moved
             if (desired_equipped != "") {
                 for (int i = 0; i < inventory.Count; ++i) {
                     if (inventory[i] == desired_equipped) {
@@ -294,8 +258,8 @@ public class Inventory : MonoBehaviour {
                         increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, false);
                     } else {
                         increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, true);
-                        c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount); // this needs to get updated for other objects to see
-                        update_ammo_remaining(); // Update GUI
+                        c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount);
+                        publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
                     }
 
                     Destroy(item);
@@ -337,12 +301,16 @@ public class Inventory : MonoBehaviour {
                 c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
                 c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
 
-                update_ammo_type();
-                update_ammo_remaining(); // Update on GUI
+                publisher.OnInventoryEvent(c.GetAmmoType().name, InventoryEvents.INVENTORY_EVENT.SET_AMMO);
+                publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
             }
             break;
-            default:
-                set_ammo_none();
+            default: {
+                    c.SetAmmoAmount(0);
+                    c.SetAmmoType(null);
+
+                    publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UNSET_AMMO);
+                }
                 break;
         }
     }
@@ -350,33 +318,13 @@ public class Inventory : MonoBehaviour {
     private void unequip_item() {
         if (Input.GetButtonDown("B")) {
             desired_equipped = "";
-            set_ammo_none();
+            c.SetAmmoAmount(0);
+            c.SetAmmoType(null);
             set_equipped_none();
         }
     }
 
-    private void update_ammo_remaining() {
-        ammo_remaining.gameObject.GetComponent<Text>().text = "Ammo Amount: " + c.GetAmmoAmount().ToString();
-
-        if (c.GetAmmoAmount() > 5) {
-            ammo_remaining.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
-        } else {
-            ammo_remaining.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
-        }
-    }
-
-    private void update_ammo_type() {
-        Sprite s = Resources.Load<Sprite>("Sprites/" + c.GetAmmoType().name);
-        if (s != null) {
-            ammo_icon.gameObject.GetComponent<Image>().sprite = s;
-        } else {
-            Debug.LogError("We had an issue generating the asset preview");
-        }
-    }
-
     public void update_equipped() {
-        // Set up the new equipped
-        // Update GUI elements (later through event system)
         if ((desired_equipped != "" && equipped == null) || (desired_equipped != "" && equipped != null && desired_equipped != equipped.name)) {
             if (equipped != null) {
                 Destroy(equipped);
@@ -386,51 +334,16 @@ public class Inventory : MonoBehaviour {
 
             tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
 
-            equipped_status.gameObject.GetComponent<Text>().text = equipped.name + " equipped";
-            equipped_status.gameObject.GetComponent<Text>().color = new Color(148, 0, 211);
-
-            Sprite s = Resources.Load<Sprite>("Sprites/" + equipped.name);
-            if (s != null) {
-                equipped_icon.gameObject.GetComponent<Image>().sprite = s;
-            } else {
-                Debug.LogError("We had an issue generating the asset preview");
-            }
-
-            publisher.OnInventoryEvent(InventoryEvents.INVENTORY_EVENT.EQUIP);
+            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.EQUIP);
         }
     }
 
     private void set_equipped_none() {
-        equipped_status.gameObject.GetComponent<Text>().text = "None equipped";
-        equipped_status.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
-
-        Sprite s = Resources.Load<Sprite>("Sprites/" + none.name);
-        if (s != null) {
-            equipped_icon.gameObject.GetComponent<Image>().sprite = s;
-        } else {
-            Debug.LogError("We had an issue generating the asset preview");
-        }
-
         if (equipped != null) {
-            publisher.OnInventoryEvent(InventoryEvents.INVENTORY_EVENT.UNEQUIP);
+            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.UNEQUIP);
 
             Destroy(equipped);
             equipped = null;
-        }
-    }
-
-    private void set_ammo_none() {
-        c.SetAmmoAmount(0);
-        c.SetAmmoType(null);
-
-        ammo_remaining.gameObject.GetComponent<Text>().text = "Ammo not set ";
-        ammo_remaining.gameObject.GetComponent<Text>().color = new Color(255, 255, 0);
-
-        Sprite s = Resources.Load<Sprite>("Sprites/" + none.name);
-        if (s != null) {
-            ammo_icon.gameObject.GetComponent<Image>().sprite = s;
-        } else {
-            Debug.LogError("We had an issue generating the asset preview");
         }
     }
 

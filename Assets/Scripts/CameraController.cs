@@ -67,6 +67,7 @@ public class CameraController : MonoBehaviour
                 break;
             case INVENTORY_EVENT.UNEQUIP: {
                     update = DefaultUpdate;
+                    left_trigger_pressed = false;
                 }
                 break;
         }
@@ -75,10 +76,18 @@ public class CameraController : MonoBehaviour
     void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
         switch (e) {
             case INPUT_EVENT.PAUSE: {
+                    if (left_trigger_pressed) {
+                        fc.enabled = false;
+                    }
+                    
                     enabled = false;
                 }
                 break;
             case INPUT_EVENT.UNPAUSE: {
+                    if (left_trigger_pressed) {
+                        fc.enabled = true;
+                    }
+
                     enabled = true;
                 }
                 break;
