@@ -27,10 +27,6 @@ public class EnemyExplosion : MonoBehaviour {
 	}
 
     private void FixedUpdate() {
-        if (!exploded && h.health <= 0) {
-            Explode();
-        }
-
         if (exploded) {
             for (int i = 0; i < transform.childCount; ++i) {
                 Transform c = transform.GetChild(i);
@@ -49,7 +45,7 @@ public class EnemyExplosion : MonoBehaviour {
         }
     }
 
-    void Explode() {
+    public void Explode() {
         // in order to maintain old position
         // we must disable forces on this rigidbody
         GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
@@ -72,6 +68,10 @@ public class EnemyExplosion : MonoBehaviour {
             Collider col = c.gameObject.GetComponent<Collider>();
             if (col == null) {
                 continue;
+            }
+
+            if (h.player_targeting) {
+                c_health.player_targeting = true;
             }
 
             col.enabled = true;

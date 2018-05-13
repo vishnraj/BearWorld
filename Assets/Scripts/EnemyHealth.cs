@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using TargetingEvents;
 
 public class EnemyHealth : BasicHealth
 {
     public List<string> random_drop_list;
+    public bool player_targeting = false;
 
     Camera cam; // this shittiness will be removed eventually, as we update more things to use events - eventually the piece that needs this
                 // will be moved into the UI code, so this will not have to be used here anymore to create UI elements
@@ -24,35 +26,21 @@ public class EnemyHealth : BasicHealth
 
         enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
 
+        player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent += TargetingEventCallback;
         health_remaining = null;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (player != null) {
-            // This should all be event driven - detect if left trigger is held down
-            // if so, the event system will update the GUI to refelct the health of
-            // each enemy in the game
-
-            if (!player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-            health_remaining != null) {
-                health_remaining.transform.SetParent(null);
-                Destroy(health_remaining);
-                health_remaining = null;
-            }
-
-            if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-                health_remaining == null) {
+        if (player_targeting != false) {
+            if (health_remaining == null) {
                 CreateHealthRemainingOnGUI();
             }
 
-            if (player.GetComponent<ThirdPersonTargetingSystem>().locked_on &&
-                health_remaining != null) {
-                UpdateHealthRemainingOnGUI();
-            }
+            UpdateHealthRemainingOnGUI();
         }
-        
+
         if (health <= 0) {
             if (GetComponent<EnemyExplosion>() != null) {
                 // from this point (unless we have reform script)
@@ -60,6 +48,7 @@ public class EnemyHealth : BasicHealth
                 // enemy explosion script
                 Destroy(health_remaining);
                 enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
+                GetComponent<EnemyExplosion>().Explode();
                 enabled = false;
                 return;
             }
@@ -76,7 +65,35 @@ public class EnemyHealth : BasicHealth
                 f.Drop(random_drop_list, transform.position);
             }
 
+            player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent -= TargetingEventCallback;
             Destroy(gameObject);
+        }
+    }
+
+    public override void Notify() {
+        if (health_remaining != null) {
+            UpdateHealthRemainingOnGUI();
+        }
+    }
+
+    void TargetingEventCallback(object sender, TARGETING_EVENT e) {
+        switch (e) {
+            case TARGETING_EVENT.FREE: {
+                    if (health_remaining != null) {
+                        health_remaining.transform.SetParent(null);
+                        Destroy(health_remaining);
+                        health_remaining = null;
+                        player_targeting = false;
+                    }
+                }
+                break;
+            case TARGETING_EVENT.LOCK_ON: {
+                    CreateHealthRemainingOnGUI();
+                    player_targeting = true;
+                }
+                break;
+            default:
+                break;
         }
     }
 

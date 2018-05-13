@@ -4,10 +4,10 @@ using UnityEngine;
 public class EnemyTracker : MonoBehaviour {
     List<GameObject> enemies;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
         
-	}
+    }
 
     private void Awake() {
         enemies = new List<GameObject>();

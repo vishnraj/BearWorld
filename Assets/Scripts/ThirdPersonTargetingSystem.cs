@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using Utility;
@@ -110,7 +109,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     }
 
     void DefaultUpdate() {
-        if (target != null) {
+        if (target != null && Enemies.GetComponent<EnemyTracker>().GetAllEnemies().Exists(x => x.GetInstanceID() == target.GetInstanceID())) {
             // This all needs to be handled via  state class
             // because this has become unruly garbage
 
