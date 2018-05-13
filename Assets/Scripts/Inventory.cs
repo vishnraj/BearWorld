@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using InputEvents;
+using InventoryEvents;
 
 namespace Items {
     public class Ammo {
@@ -27,23 +28,6 @@ namespace Items {
     }
 }
 
-namespace InventoryEvents {
-    public enum INVENTORY_EVENT { INIT, EQUIP, UNEQUIP, SET_AMMO, UNSET_AMMO, UPDATE_AMMO_AMOUNT };
-
-    public class InventoryPublisher {
-        public delegate void InventoryEventHandler(object data, INVENTORY_EVENT e);
-        public event InventoryEventHandler InventoryEvent;
-
-        public void OnInventoryEvent(object data, INVENTORY_EVENT e) {
-            if (InventoryEvent != null) {
-                InventoryEvent(data, e);
-            } else {
-                Debug.Log("NOOP");
-            }
-        }
-    }
-}
-
 // Will determine how items are picked up and assigned 
 // to player later as well as notifying other systems
 // about these items 
@@ -53,7 +37,6 @@ public class Inventory : MonoBehaviour {
     public string desired_equipped;
     public GameObject equipped = null;
     public GameObject event_manager;
-    public InventoryEvents.InventoryPublisher publisher;
 
     bool start = false;
     int current_inventory_index;
@@ -61,6 +44,7 @@ public class Inventory : MonoBehaviour {
     List<string> inventory;
     Dictionary<string, Items.Ammo> ammo_inventory;
 
+    InventoryPublisher publisher;
     PlayerAttackController pac;
     ThirdPersonTargetingSystem tps;
     BasicCharacter c;
@@ -84,19 +68,21 @@ public class Inventory : MonoBehaviour {
         c.SetAmmoAmount(0);
         c.SetAmmoType(null);
 
+
+        publisher = event_manager.GetComponent<ComponentEventManager>().inventory_publisher;
+
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         update = DefaultUpdate;
     }
 
     private void Awake() {
         inventory = new List<string>();
-        publisher = new InventoryEvents.InventoryPublisher();
     }
 
     // Update is called once per frame
     private void Update() {
         if (!start) {
-            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.INIT);
+            publisher.OnInventoryEvent(equipped, INVENTORY_EVENT.INIT);
             start = true;
         }
 
@@ -153,7 +139,7 @@ public class Inventory : MonoBehaviour {
         // in the player's possession
         if (c.GetAmmoType() != null && ammo_inventory[equipped.name].ammo_amount != c.GetAmmoAmount()) {
             ammo_inventory[equipped.name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
-            publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
+            event_manager.GetComponent<ComponentEventManager>().inventory_publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
         }
     }
 
@@ -258,7 +244,7 @@ public class Inventory : MonoBehaviour {
                     } else {
                         increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, true);
                         c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount);
-                        publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
+                        publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
                     }
 
                     Destroy(item);
@@ -300,15 +286,15 @@ public class Inventory : MonoBehaviour {
                 c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
                 c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
 
-                publisher.OnInventoryEvent(c.GetAmmoType().name, InventoryEvents.INVENTORY_EVENT.SET_AMMO);
-                publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
+                publisher.OnInventoryEvent(c.GetAmmoType().name, INVENTORY_EVENT.SET_AMMO);
+                publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
             }
             break;
             default: {
                     c.SetAmmoAmount(0);
                     c.SetAmmoType(null);
 
-                    publisher.OnInventoryEvent(c.GetAmmoAmount(), InventoryEvents.INVENTORY_EVENT.UNSET_AMMO);
+                    publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UNSET_AMMO);
                 }
                 break;
         }
@@ -333,13 +319,13 @@ public class Inventory : MonoBehaviour {
 
             tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
 
-            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.EQUIP);
+            publisher.OnInventoryEvent(equipped, INVENTORY_EVENT.EQUIP);
         }
     }
 
     private void set_equipped_none() {
         if (equipped != null) {
-            publisher.OnInventoryEvent(equipped, InventoryEvents.INVENTORY_EVENT.UNEQUIP);
+            publisher.OnInventoryEvent(equipped, INVENTORY_EVENT.UNEQUIP);
 
             Destroy(equipped);
             equipped = null;

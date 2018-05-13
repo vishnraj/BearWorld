@@ -1,62 +1,58 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 using TargetingEvents;
+using EnemyHealthEvents;
 
 public class EnemyHealth : BasicHealth
 {
     public List<string> random_drop_list;
-    public bool player_targeting = false;
+    bool start = false;
+    public bool player_locked_on = false;
 
-    Camera cam; // this shittiness will be removed eventually, as we update more things to use events - eventually the piece that needs this
-                // will be moved into the UI code, so this will not have to be used here anymore to create UI elements
-    GameObject HUD;
-    GameObject player;
+    EnemyHealthEventPublisher publisher;
+    GameObject event_manager;
     GameObject enemies;
-    GameObject health_remaining;
+
+    TargetingPublisher targeting_publisher;
 
     // Use this for initialization
     void Start()
     {
-        // initialize objects because this will exist in a prefabs
-        HUD = GameObject.Find("HUD");
-        player = GameObject.Find("Bear"); // things related to player should be communicated via messages
+        // enemies are prefabs, so prior to spawning we cannot know
+        // about other objects in the scene - we grab revelant ones here
+        event_manager = GameObject.Find("GlobalEventManager");
         enemies = GameObject.Find("Enemies");
-        cam = GameObject.Find("Main Camera").GetComponent<Camera>();
 
         enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
 
-        player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent += TargetingEventCallback;
-        health_remaining = null;
+        publisher = event_manager.GetComponent<ComponentEventManager>().enemy_health_publisher;
+
+        targeting_publisher = event_manager.GetComponent<ComponentEventManager>().targeting_publisher;
+        targeting_publisher.TargetingEvent += TargetingEventCallback;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (player_targeting != false) {
-            if (health_remaining == null) {
-                CreateHealthRemainingOnGUI();
-            }
-
-            UpdateHealthRemainingOnGUI();
-        }
-
         if (health <= 0) {
             if (GetComponent<EnemyExplosion>() != null) {
                 // from this point (unless we have reform script)
                 // we will delagate death of the enemy to the
-                // enemy explosion script
-                Destroy(health_remaining);
+                // enemy explosion script - but we don't destroy
+                // this object - CompositeEnemy will take care of this
+                if (player_locked_on && start) {
+                    publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+                }
+                
                 enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
                 GetComponent<EnemyExplosion>().Explode();
                 enabled = false;
                 return;
             }
 
-            if (health_remaining != null) {
-                health_remaining.transform.SetParent(null);
+            if (player_locked_on && start) {
+                publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
             }
-            Destroy(health_remaining);
 
             enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
 
@@ -65,65 +61,49 @@ public class EnemyHealth : BasicHealth
                 f.Drop(random_drop_list, transform.position);
             }
 
-            player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent -= TargetingEventCallback;
+            targeting_publisher.TargetingEvent -= TargetingEventCallback;
             Destroy(gameObject);
+            return;
+        }
+
+        if (player_locked_on) {
+            // mainly for explosion objects, because they may inherit targeting
+            // state from parent, we need to create UI element the first time through
+            if (!start) {
+                publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health,
+                    transform.position), ENEMY_HEALTH_EVENT.INIT);
+                start = true;
+            }
+
+            // This is a somewhat unforunate side effect - only the enemy actually knows where it is, so only it
+            // can communicate this with the UI - thus we need to do this during each update if player is locked on
+            publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
         }
     }
 
     public override void Notify() {
-        if (health_remaining != null) {
-            UpdateHealthRemainingOnGUI();
+        if (player_locked_on && start) {
+            publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
         }
     }
 
     void TargetingEventCallback(object sender, TARGETING_EVENT e) {
         switch (e) {
             case TARGETING_EVENT.FREE: {
-                    if (health_remaining != null) {
-                        health_remaining.transform.SetParent(null);
-                        Destroy(health_remaining);
-                        health_remaining = null;
-                        player_targeting = false;
+                    if (player_locked_on) {
+                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+                        player_locked_on = false;
                     }
                 }
                 break;
             case TARGETING_EVENT.LOCK_ON: {
-                    CreateHealthRemainingOnGUI();
-                    player_targeting = true;
+                    publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.INIT);
+                    player_locked_on = true;
+                    start = true; // so we don't create ui_element again
                 }
                 break;
             default:
                 break;
         }
-    }
-
-    void UpdateHealthRemainingOnGUI() {
-        Text health_text = health_remaining.GetComponent<Text>();
-        health_text.text = health.ToString();
-
-        Vector2 enemy_screen_point = cam.WorldToViewportPoint(transform.position);
-        RectTransform hud_rect = HUD.GetComponent<RectTransform>();
-        Vector2 enemy_health_position = new Vector2(
-        ((enemy_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.46f)),
-        ((enemy_screen_point.y * hud_rect.sizeDelta.y) - (hud_rect.sizeDelta.y * 0.53f)));
-
-        health_remaining.GetComponent<RectTransform>().anchoredPosition = enemy_health_position;
-    }
-
-    void CreateHealthRemainingOnGUI() {
-        health_remaining = new GameObject();
-        health_remaining.name = "Health Remaining " + name;
-        health_remaining.AddComponent<Text>().text = health.ToString();
-        health_remaining.layer = 5;
-
-        Text health_text = health_remaining.GetComponent<Text>();
-        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
-        health_text.fontStyle = FontStyle.Bold;
-        health_text.font = ArialFont;
-        health_text.fontSize = 20;
-        health_text.enabled = true;
-        health_text.color = new Color(255, 0, 0);
-
-        health_remaining.transform.SetParent(HUD.transform);
-    }
+    }    
 }

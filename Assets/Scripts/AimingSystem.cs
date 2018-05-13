@@ -11,6 +11,7 @@ public class AimingSystem : MonoBehaviour
     public GameObject player;
     public float ray_radius;
     public float desired_scale = .4f;
+    public GameObject event_manager;
 
     // This is hard coded, it just guarantees
     // that the part of the ray used to set direction
@@ -42,8 +43,8 @@ public class AimingSystem : MonoBehaviour
 
         tps = player.GetComponent<ThirdPersonTargetingSystem>();
 
-        player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent += TargetingEventCallback;
-        player.GetComponent<Inventory>().publisher.InventoryEvent += InventoryEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
 
         update = null;
         enabled = false; // seems a little messy , but we need this to run after Awake for some of the above

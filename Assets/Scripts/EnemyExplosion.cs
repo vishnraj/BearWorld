@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class EnemyExplosion : MonoBehaviour {
     public float radius;
@@ -70,8 +68,8 @@ public class EnemyExplosion : MonoBehaviour {
                 continue;
             }
 
-            if (h.player_targeting) {
-                c_health.player_targeting = true;
+            if (h.player_locked_on) {
+                c_health.player_locked_on = true;
             }
 
             col.enabled = true;

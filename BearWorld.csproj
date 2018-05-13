@@ -97,6 +97,7 @@
     <Compile Include="Assets\Scripts\BombAttack.cs" />
     <Compile Include="Assets\Scripts\BombDamage.cs" />
     <Compile Include="Assets\Scripts\CameraController.cs" />
+    <Compile Include="Assets\Scripts\ComponentEventManager.cs" />
     <Compile Include="Assets\Scripts\CompositeEnemy.cs" />
     <Compile Include="Assets\Scripts\DamageDealer.cs" />
     <Compile Include="Assets\Scripts\EnemyExplosion.cs" />

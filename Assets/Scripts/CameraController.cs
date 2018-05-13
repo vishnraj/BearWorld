@@ -22,7 +22,7 @@ public class CameraController : MonoBehaviour
         xrc = GetComponent<XboxOneControllerRotatingCamera>();
 
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
-        player.GetComponent<Inventory>().publisher.InventoryEvent += InventoryEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
 
         update = DefaultUpdate;
     }
@@ -44,14 +44,14 @@ public class CameraController : MonoBehaviour
     }
 
     void EquippedUpdate() {
-        if (Input.GetAxis("LeftTriggerAxis") > 0 && !left_trigger_pressed) {
+        if (Input.GetAxis("LeftTriggerAxis") > 0) {
             xrc.enabled = false;
             fc.enabled = true;
 
             left_trigger_pressed = true;
         }
 
-        if (Input.GetAxis("LeftTriggerAxis") == 0 && left_trigger_pressed) {
+        if (Input.GetAxis("LeftTriggerAxis") == 0) {
             xrc.enabled = true;
             fc.enabled = false;
 
@@ -84,6 +84,8 @@ public class CameraController : MonoBehaviour
                 }
                 break;
             case INPUT_EVENT.UNPAUSE: {
+                    // attempting to maintain camera on target
+                    // through the pause menu
                     if (left_trigger_pressed) {
                         fc.enabled = true;
                     }

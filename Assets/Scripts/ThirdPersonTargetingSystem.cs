@@ -3,24 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Utility;
 using InputEvents;
-
-namespace TargetingEvents {
-    public enum TARGETING_EVENT{ INIT, FREE, CAN_LOCK, LOCK_ON };
-
-    public class TargetingPublisher {
-        public delegate void TargetingEventHandler(object sender, TARGETING_EVENT e);
-        public event TargetingEventHandler TargetingEvent;
-
-        public void OnTargetingEvent(TARGETING_EVENT e) {
-            TargetingEventHandler i = TargetingEvent;
-            if (i != null) {
-                i(this, e);
-            } else {
-                Debug.Log("NOOP");
-            }
-        }
-    }
-}
+using TargetingEvents;
 
 public class ThirdPersonTargetingSystem : MonoBehaviour
 {
@@ -39,7 +22,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                                                   // to the angle created by the joystick's coordinates
                                                   // if there is a target, otherwise just sorts using InstanceIDs
                                                   // in ascending order
-    public TargetingEvents.TargetingPublisher publisher;
 
     bool start = false;
     float input_x = 0.0f;
@@ -49,6 +31,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     Vector3 previous_target_pos;
 
+    TargetingPublisher publisher;
     CloseCompare compare_distances;
     Rotation rt;
     BasicCharacter c;
@@ -67,20 +50,21 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         rt = new Rotation();
         c = GetComponent<BasicCharacter>();
 
+        publisher = event_manager.GetComponent<ComponentEventManager>().targeting_publisher;
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
 
         update = DefaultUpdate;
     }
 
     private void Awake() {
-        publisher = new TargetingEvents.TargetingPublisher();
+        
     }
 
     // Update is called once per frame
     void Update()
     {
         if (!start) {
-            publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.INIT);
+            publisher.OnTargetingEvent(TARGETING_EVENT.INIT);
             start = true;
         }
 
@@ -92,7 +76,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             DisableLockedOn();
             can_lock_on = false;
 
-            publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+            publisher.OnTargetingEvent(TARGETING_EVENT.FREE);
 
             c.SetTarget(direction); // this may not actually be needed
         } else {
@@ -100,10 +84,10 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
             if (locked_on && !(to_target.magnitude <= current_weapon_range)) {
                 DisableLockedOn();
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+                publisher.OnTargetingEvent(TARGETING_EVENT.FREE);
             } else if (!locked_on && to_target.magnitude <= current_weapon_range) {
                 can_lock_on = true;
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
+                publisher.OnTargetingEvent(TARGETING_EVENT.CAN_LOCK);
             }
         }
     }
@@ -116,22 +100,22 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             if (can_lock_on && Input.GetAxis("LeftTriggerAxis") > 0 && !locked_on) {
                 locked_on = true;
 
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.LOCK_ON);
+                publisher.OnTargetingEvent(TARGETING_EVENT.LOCK_ON);
 
             } else if (Input.GetAxis("LeftTriggerAxis") == 0 && locked_on) {
                 locked_on = false;
 
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
+                publisher.OnTargetingEvent(TARGETING_EVENT.CAN_LOCK);
             }
 
             Vector3 to_target = target.transform.position - transform.position;
 
             if (locked_on && !(to_target.magnitude <= current_weapon_range)) {
                 DisableLockedOn();
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+                publisher.OnTargetingEvent(TARGETING_EVENT.FREE);
             } else if (!locked_on && to_target.magnitude <= current_weapon_range) {
                 can_lock_on = true;
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.CAN_LOCK);
+                publisher.OnTargetingEvent(TARGETING_EVENT.CAN_LOCK);
             }
 
             // user input related
@@ -174,7 +158,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             }
 
             if (can_lock_on) {
-                publisher.OnTargetingEvent(TargetingEvents.TARGETING_EVENT.FREE);
+                publisher.OnTargetingEvent(TARGETING_EVENT.FREE);
             }
 
             can_lock_on = false;

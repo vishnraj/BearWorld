@@ -1,11 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+
+using UnityEngine;
 using UnityEngine.UI;
+
 using PlayerHealthEvents;
 using InventoryEvents;
 using TargetingEvents;
+using EnemyHealthEvents;
 
 public class HUD : MonoBehaviour {
     public GameObject player;
+    public Camera cam;
+    public GameObject event_manager;
 
     GameObject game_over;
     Transform player_icon;
@@ -17,9 +23,12 @@ public class HUD : MonoBehaviour {
     Transform ammo_icon;
     Transform ammo_remaining;
 
+    Dictionary<int, GameObject> enemy_health_remaining;
+
     Color blue = new Color(0, 0, 255);
     Color red = new Color(255, 0, 0);
     Color yellow = new Color(255, 255, 0);
+    Color lime_green = new Color(.49f, 1f, 0f);
     Color purple = new Color(148, 0, 211);
 
     // Use this for initialization
@@ -43,9 +52,12 @@ public class HUD : MonoBehaviour {
         ammo_icon = transform.Find("AmmoIcon");
         ammo_remaining = transform.Find("AmmoRemaining");
 
-        player.GetComponent<PlayerHealth>().publisher.PlayerHealthEvent += PlayerHealthEventsCallback;
-        player.GetComponent<Inventory>().publisher.InventoryEvent += InventoryEventCallback;
-        player.GetComponent<ThirdPersonTargetingSystem>().publisher.TargetingEvent += TargetingEventCallback;
+        enemy_health_remaining = new Dictionary<int, GameObject>();
+
+        event_manager.GetComponent<ComponentEventManager>().health_publisher.PlayerHealthEvent += PlayerHealthEventsCallback;
+        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().enemy_health_publisher.EnemyHealthEvent += EnemyHealthEventsCallback;
     }
 	
 	// Update is called once per frame
@@ -75,6 +87,34 @@ public class HUD : MonoBehaviour {
             case PLAYER_HEALTH_EVENT.DEAD: {
                     health_remaining.gameObject.GetComponent<Text>().text = "Health Remaining: 0";
                     CreateGameOver();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void EnemyHealthEventsCallback(EnemyHealthData data, ENEMY_HEALTH_EVENT e) {
+        switch (e) {
+            case ENEMY_HEALTH_EVENT.INIT: {
+                    CreateEnemyHealthRemainingOnGUI(data.id, data.health);
+                }
+                break;
+            case ENEMY_HEALTH_EVENT.UPDATE: {
+                    if (!enemy_health_remaining.ContainsKey(data.id)) {
+                        Debug.Log("Error: ID " + data.id.ToString() + " not valid.");
+                        return;
+                    }
+
+                    UpdateEnemyHealthRemaining(enemy_health_remaining[data.id], data.pos,
+                        data.health);
+                }
+                break;
+            case ENEMY_HEALTH_EVENT.DESTROY: {
+                    if (enemy_health_remaining.ContainsKey(data.id)) {
+                        Destroy(enemy_health_remaining[data.id]);
+                        enemy_health_remaining.Remove(data.id);
+                    }
                 }
                 break;
             default:
@@ -164,22 +204,53 @@ public class HUD : MonoBehaviour {
             case TARGETING_EVENT.INIT:
             case TARGETING_EVENT.FREE: {
                     targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Can't Lock";
-                    targeting_status.gameObject.GetComponent<Text>().color = new Color(0, 0, 255);
+                    targeting_status.gameObject.GetComponent<Text>().color = blue;
                 }
                 break;
             case TARGETING_EVENT.CAN_LOCK: {
                     targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Can Lock";
-                    targeting_status.gameObject.GetComponent<Text>().color = new Color(.49f, 1f, 0f);
+                    targeting_status.gameObject.GetComponent<Text>().color = lime_green;
                 }
                 break;
             case TARGETING_EVENT.LOCK_ON: {
                     targeting_status.gameObject.GetComponent<Text>().text = "Targeting Status: Locked";
-                    targeting_status.gameObject.GetComponent<Text>().color = new Color(255, 0, 0);
+                    targeting_status.gameObject.GetComponent<Text>().color = red;
                 }
                 break;
             default:
                 break;
         }
+    }
+
+    void UpdateEnemyHealthRemaining(GameObject enemy_health_ui, Vector3 pos, float health) {
+        Text health_text = enemy_health_ui.GetComponent<Text>();
+        health_text.text = health.ToString();
+
+        Vector2 enemy_screen_point = cam.WorldToViewportPoint(pos);
+        RectTransform hud_rect = GetComponent<RectTransform>();
+        Vector2 enemy_health_position = new Vector2(
+        ((enemy_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.46f)),
+        ((enemy_screen_point.y * hud_rect.sizeDelta.y) - (hud_rect.sizeDelta.y * 0.53f)));
+
+        enemy_health_ui.GetComponent<RectTransform>().anchoredPosition = enemy_health_position;
+    }
+
+    void CreateEnemyHealthRemainingOnGUI(int id, float health) {
+        GameObject enemy_health_ui = new GameObject();
+        enemy_health_ui.name = "Enemy Health " + id.ToString();
+        enemy_health_ui.AddComponent<Text>().text = health.ToString();
+        enemy_health_ui.layer = 5;
+
+        Text health_text = enemy_health_ui.GetComponent<Text>();
+        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+        health_text.fontStyle = FontStyle.Bold;
+        health_text.font = ArialFont;
+        health_text.fontSize = 20;
+        health_text.enabled = true;
+        health_text.color = red;
+
+        enemy_health_ui.transform.SetParent(transform);
+        enemy_health_remaining.Add(id, enemy_health_ui);
     }
 
     void CreateGameOver() {
