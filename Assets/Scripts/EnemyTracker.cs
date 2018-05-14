@@ -26,6 +26,18 @@ public class EnemyTracker : MonoBehaviour {
         enemies.Add(enemy);
     }
 
+    public bool FindEnemy(GameObject enemy) {
+        if (enemies.Exists(x => x.GetInstanceID() == enemy.GetInstanceID())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public int Count() {
+        return enemies.Count;
+    }
+
     public List<GameObject> GetAllEnemies() {
         return enemies;
     }

@@ -7,17 +7,20 @@ public class EnemyExplosion : MonoBehaviour {
     public float parts_speed;
 
     bool exploded = false; // replace with state pattern later
-    EnemyHealth h;
+    EnemyHealth h = null;
+    GameObject enemies = null;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
         h = GetComponent<EnemyHealth>();
         
         if (h == null) {
             Debug.LogError("We could not find an enemy health script attached to this object. Exiting.");
             return;
         }
-	}
+
+        enemies = GameObject.Find("Enemies");
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -75,6 +78,7 @@ public class EnemyExplosion : MonoBehaviour {
             col.enabled = true;
             col.material = (PhysicMaterial)Resources.Load("Prefabs/EnemyParts");
 
+            enemies.GetComponent<EnemyTracker>().AddEnemy(c.gameObject);
             c_health.enabled = true;
 
             rb.AddExplosionForce(power, transform.position, radius, upward);

@@ -199,7 +199,7 @@ public class HUD : MonoBehaviour {
         }
     }
 
-    void TargetingEventCallback(object sender, TARGETING_EVENT e) {
+    void TargetingEventCallback(GameObject target, TARGETING_EVENT e) {
         switch (e) {
             case TARGETING_EVENT.INIT:
             case TARGETING_EVENT.FREE: {

@@ -21,12 +21,12 @@ namespace TargetingEvents {
     public enum TARGETING_EVENT { INIT, FREE, CAN_LOCK, LOCK_ON };
 
     public class TargetingPublisher {
-        public delegate void TargetingEventHandler(object sender, TARGETING_EVENT e);
+        public delegate void TargetingEventHandler(GameObject target, TARGETING_EVENT e);
         public event TargetingEventHandler TargetingEvent;
 
-        public void OnTargetingEvent(TARGETING_EVENT e) {
+        public void OnTargetingEvent(GameObject target, TARGETING_EVENT e) {
             if (TargetingEvent != null) {
-                TargetingEvent(this, e);
+                TargetingEvent(target, e);
             } else {
                 Debug.Log("NOOP");
             }
@@ -44,6 +44,33 @@ namespace PlayerHealthEvents {
         public void OnPlayerHealthEvent(float health, PLAYER_HEALTH_EVENT e) {
             if (PlayerHealthEvent != null) {
                 PlayerHealthEvent(health, e);
+            } else {
+                Debug.Log("NOOP");
+            }
+        }
+    }
+}
+
+namespace AimingEvents {
+    public enum AIMING_EVENT { SCANNING, FOUND, AIM_OFF };
+
+    public class AimingData {
+        public Vector3 direction;
+        public GameObject target = null;
+
+        public AimingData(Vector3 _direction, GameObject _target) {
+            direction = _direction;
+            target = _target;
+        }
+    }
+
+    public class AimingPublisher {
+        public delegate void AimingEventHandler(AimingData data, AIMING_EVENT e);
+        public event AimingEventHandler AimingEvent;
+
+        public void OnAimingEvent(AimingData data, AIMING_EVENT e) {
+            if (AimingEvent != null) {
+                AimingEvent(data, e);
             } else {
                 Debug.Log("NOOP");
             }
@@ -85,6 +112,7 @@ public class ComponentEventManager : MonoBehaviour {
     public TargetingEvents.TargetingPublisher targeting_publisher;
     public PlayerHealthEvents.PlayerHealthPublisher health_publisher;
     public EnemyHealthEvents.EnemyHealthEventPublisher enemy_health_publisher;
+    public AimingEvents.AimingPublisher aiming_publisher;
 
     // Use this for initialization
     void Start () {
@@ -96,6 +124,7 @@ public class ComponentEventManager : MonoBehaviour {
         targeting_publisher = new TargetingEvents.TargetingPublisher();
         health_publisher = new PlayerHealthEvents.PlayerHealthPublisher();
         enemy_health_publisher = new EnemyHealthEvents.EnemyHealthEventPublisher();
+        aiming_publisher = new AimingEvents.AimingPublisher();
     }
 	
 	// Update is called once per frame

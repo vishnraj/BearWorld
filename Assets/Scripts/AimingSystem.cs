@@ -2,13 +2,13 @@
 using UnityEngine.UI;
 using TargetingEvents;
 using InventoryEvents;
+using AimingEvents;
 
 // Used to deliver target(s) to other systems
 public class AimingSystem : MonoBehaviour
 {
     public GameObject crosshair;
     public Camera cam;
-    public GameObject player;
     public float ray_radius;
     public float desired_scale = .4f;
     public GameObject event_manager;
@@ -21,8 +21,9 @@ public class AimingSystem : MonoBehaviour
     public Sprite default_reticle;
     public Sprite target_reticle;
 
+    AimingPublisher publisher;
     GameObject targeting_icon;
-    ThirdPersonTargetingSystem tps;
+    GameObject target;
 
     public delegate void DoUpdate();
     DoUpdate update;
@@ -41,7 +42,7 @@ public class AimingSystem : MonoBehaviour
 
         targeting_icon.GetComponent<Image>().transform.localScale = new Vector3(desired_scale, desired_scale, desired_scale);
 
-        tps = player.GetComponent<ThirdPersonTargetingSystem>();
+        publisher = event_manager.GetComponent<ComponentEventManager>().aiming_publisher;
 
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventCallback;
         event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
@@ -61,7 +62,7 @@ public class AimingSystem : MonoBehaviour
     }
 
     void LockOnUpdate() {
-        Vector2 target_screen_point = cam.WorldToViewportPoint(tps.target.transform.position);
+        Vector2 target_screen_point = cam.WorldToViewportPoint(target.transform.position);
         RectTransform hud_rect = transform.parent.GetComponent<RectTransform>();
         Vector2 targeting_icon_position = new Vector2(
         ((target_screen_point.x * hud_rect.sizeDelta.x) - (hud_rect.sizeDelta.x * 0.5f)),
@@ -79,36 +80,19 @@ public class AimingSystem : MonoBehaviour
         Ray ray;
         // the ray needs to be from wherever is in the current view to object
         ray = cam.ScreenPointToRay(crosshair.GetComponent<RectTransform>().position);
-        tps.direction = ray.GetPoint(in_front_of); // this may better communicated via event
 
         int enemy_layer = 1 << LayerMask.NameToLayer("Enemy_Layer");
-        if (player != null && Physics.SphereCast(ray, ray_radius, out hit, Mathf.Infinity, enemy_layer) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null) {
-            Vector3 direction = player.transform.position - hit.transform.position;
-
-            if (direction.magnitude <= tps.current_weapon_range) {
-                if (!tps.locked_on) {
-                    // changing state of objects should rely on message passing
-                    tps.target = hit.collider.gameObject;
-                }
-
-                crosshair.GetComponent<Image>().sprite = target_reticle;
-            } else {
-                SetDefaults();
-            }
+        if (Physics.SphereCast(ray, ray_radius, out hit, Mathf.Infinity, enemy_layer) && hit.collider.gameObject.GetComponent<EnemyHealth>() != null) {
+            publisher.OnAimingEvent(new AimingData(ray.GetPoint(in_front_of), hit.collider.gameObject), AIMING_EVENT.FOUND);
         } else {
-            SetDefaults();
+            crosshair.GetComponent<Image>().sprite = default_reticle;
+            publisher.OnAimingEvent(new AimingData(ray.GetPoint(in_front_of), null), AIMING_EVENT.SCANNING);
         }
     }
 
-    void TargetingEventCallback(object sender, TARGETING_EVENT e) {
+    void TargetingEventCallback(GameObject _target, TARGETING_EVENT e) {
         switch (e) {
-            case TARGETING_EVENT.CAN_LOCK:
             case TARGETING_EVENT.FREE: {
-                    // as a fallback, unless this is enabled,
-                    // don't do anything - this is because there is a function
-                    // in third person targeting that may still send this out
-                    // and in general every componenent must handle it
-                    // the way that is best for them
                     if (enabled) {
                         crosshair.GetComponent<Image>().enabled = true;
                         targeting_icon.GetComponent<Image>().enabled = false;
@@ -116,12 +100,23 @@ public class AimingSystem : MonoBehaviour
                     }
                 }
                 break;
+            case TARGETING_EVENT.CAN_LOCK: {
+                    if (enabled) {
+                        if (targeting_icon.GetComponent<Image>().enabled) {
+                            crosshair.GetComponent<Image>().enabled = true;
+                            targeting_icon.GetComponent<Image>().enabled = false;
+                            update = DefaultUpdate;
+                        }
+
+                        crosshair.GetComponent<Image>().sprite = target_reticle;
+                    }
+                }
+                break;
             case TARGETING_EVENT.LOCK_ON: {
-                    // as a fallback, unless this is enabled,
-                    // don't do anything
                     if (enabled) {
                         crosshair.GetComponent<Image>().enabled = false;
                         targeting_icon.GetComponent<Image>().enabled = true;
+                        target = _target;
                         update = LockOnUpdate;
                     }
                 }
@@ -137,7 +132,7 @@ public class AimingSystem : MonoBehaviour
                     // we won't do anything if we are already enabled
                     if (!enabled) {
                         crosshair.GetComponent<Image>().enabled = true;
-                        SetDefaults();
+                        crosshair.GetComponent<Image>().sprite = default_reticle;
                         update = DefaultUpdate;
                         enabled = true;
                     }
@@ -146,18 +141,12 @@ public class AimingSystem : MonoBehaviour
             case INVENTORY_EVENT.UNEQUIP: {
                     crosshair.GetComponent<Image>().enabled = false;
                     targeting_icon.GetComponent<Image>().enabled = false;
-                    tps.target = null; // possibly communicate via an event
-                    enabled = false;
+                    enabled = false; // must set before
+                    publisher.OnAimingEvent(null, AIMING_EVENT.AIM_OFF);
                 }
                 break;
             default:
                 break;
         }
-    }
-
-    void SetDefaults()
-    {
-        crosshair.GetComponent<Image>().sprite = default_reticle;
-        tps.target = null;
     }
 }

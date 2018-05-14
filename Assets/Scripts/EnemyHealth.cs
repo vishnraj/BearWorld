@@ -9,9 +9,9 @@ public class EnemyHealth : BasicHealth
     bool start = false;
     public bool player_locked_on = false;
 
-    EnemyHealthEventPublisher publisher;
-    GameObject event_manager;
-    GameObject enemies;
+    EnemyHealthEventPublisher publisher = null;
+    GameObject event_manager = null;
+    GameObject enemies = null;
 
     TargetingPublisher targeting_publisher;
 
@@ -19,11 +19,16 @@ public class EnemyHealth : BasicHealth
     void Start()
     {
         // enemies are prefabs, so prior to spawning we cannot know
-        // about other objects in the scene - we grab revelant ones here
+        // about other objects in the scene - we grab revelant ones here    
         event_manager = GameObject.Find("GlobalEventManager");
         enemies = GameObject.Find("Enemies");
 
-        enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
+        // We do this because sometimes we need to add the enemy wherever
+        // it is actually spawned - at that point we will have it in the list
+        // prior to getting here and we don't want to add it twice
+        if (!enemies.GetComponent<EnemyTracker>().FindEnemy(gameObject)) {
+            enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
+        }
 
         publisher = event_manager.GetComponent<ComponentEventManager>().enemy_health_publisher;
 
@@ -87,7 +92,7 @@ public class EnemyHealth : BasicHealth
         }
     }
 
-    void TargetingEventCallback(object sender, TARGETING_EVENT e) {
+    void TargetingEventCallback(GameObject target, TARGETING_EVENT e) {
         switch (e) {
             case TARGETING_EVENT.FREE: {
                     if (player_locked_on) {
@@ -97,9 +102,11 @@ public class EnemyHealth : BasicHealth
                 }
                 break;
             case TARGETING_EVENT.LOCK_ON: {
-                    publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.INIT);
-                    player_locked_on = true;
-                    start = true; // so we don't create ui_element again
+                    if (!player_locked_on) {
+                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.INIT);
+                        player_locked_on = true;
+                        start = true; // so we don't create ui_element again
+                    }
                 }
                 break;
             default:
