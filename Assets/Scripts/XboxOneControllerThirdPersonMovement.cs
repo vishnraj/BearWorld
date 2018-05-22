@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
 using Utility;
 using InputEvents;
+using TargetingEvents;
+using InventoryEvents;
+using AimingEvents;
 
 public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 {
@@ -9,20 +11,28 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     public GameObject event_manager;
     public bool move = false;
 
+    public delegate void DoUpdate();
+    DoUpdate update;
+
     float movementSpeed = 100f;
     float jumpPower = 600f;
+    Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
     bool jump = false;
+    bool locked_on = false;
     bool isGrounded = false;
 
     Rigidbody rb;
     Rotation rt;
-    ThirdPersonTargetingSystem tps;
-    PlayerAttackController pac;
+    GameObject current_target; // this is received from targeting system - it tells us where to point if locked_on
 
     void Start()
     {
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
+        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventsCallback;
+        event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventsCallback;
+        event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
+        update = DefaultUpdate;
     }
 
     void Awake()
@@ -31,8 +41,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         Physics.gravity = new Vector3(0, -18f, 0);
         
         rb = GetComponent<Rigidbody>();
-        tps = GetComponent<ThirdPersonTargetingSystem>();
-        pac = GetComponent<PlayerAttackController>();
     }
 
     void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
@@ -50,28 +58,83 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
+    void TargetingEventsCallback(GameObject target, TARGETING_EVENT e) {
+        switch(e) {
+            case TARGETING_EVENT.LOCK_ON: {
+                    update = TargetingUpdate;
+                    current_target = target;
+                    locked_on = true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void AimingEventCallback(AimingData data, AIMING_EVENT e) {
+        switch(e) {
+            case AIMING_EVENT.SCANNING:
+            case AIMING_EVENT.FOUND: {
+                    // if we see these events, we are no longer
+                    // locked_on - however in this frame, we must be
+                    // equipped - else we would not receive these
+                    // so it is safe to set update back to EquippedUpdate
+                    update = EquippedUpdate;
+                    desired_direction = data.direction;
+                    locked_on = false;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+
+    void InventoryEventsCallback(object data, INVENTORY_EVENT e) {
+        switch(e) {
+            case INVENTORY_EVENT.EQUIP: {
+                    if (!locked_on) {
+                        update = EquippedUpdate;
+                    } // else, we stay in targeting
+                }
+                break;
+            case INVENTORY_EVENT.UNEQUIP:
+                update = DefaultUpdate; // this should happen, no matter targeting
+                break;
+            default:
+                break;
+        }
+    }
+
     void Update()
     {
-        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0)
-        {
+        // the input we gather here is also for FixedUpdate on the next frame
+        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0) {
             move = true;
         }
-
-        if (Input.GetAxis("RightTriggerAxis") == 0  && !tps.locked_on && move) {
-            CalculateFreeRoamRotation();
-        } else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on && !pac.enabled && move) {
-            CalculateFreeRoamRotation();
-        } else if (Input.GetAxis("RightTriggerAxis") > 0 && !tps.locked_on && pac.enabled) {
-            CalculateTargetingRotation(tps.direction);
-        } else if (tps.locked_on) {
-            //to account for race condition with target object and locked_on variables
-            if (tps.target != null)
-                CalculateTargetingRotation(tps.target.transform.position);
-        }
-
         if (Input.GetButton("A") && isGrounded) {
             jump = true;
         }
+
+        update();
+    }
+
+    void DefaultUpdate() {
+        if (move) {
+            CalculateFreeRoamRotationUnequipped();
+        }
+    }
+
+    void EquippedUpdate() {
+        if (Input.GetAxis("RightTriggerAxis") == 0 && move) {
+            CalculateFreeRoamRotationEquipped();
+        } else if (Input.GetAxis("RightTriggerAxis") > 0) {
+            CalculateTargetingRotation(desired_direction);
+        }
+    }
+
+    void TargetingUpdate() {
+        CalculateTargetingRotation(current_target.transform.position);
     }
 
     void FixedUpdate()
@@ -120,40 +183,38 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     // Calculates movement direction
-    void CalculateFreeRoamRotation()
+    void CalculateFreeRoamRotationUnequipped()
     {
         float theta_final = CalculateThirdPersonZXRotation();
+        transform.Rotate(Vector3.up, theta_final);
+        movement_direction = transform.forward;
+    }
 
-        if (Input.GetAxis("LeftTriggerAxis") > 0 && pac.enabled)
-        {
+    void CalculateFreeRoamRotationEquipped() {
+        float theta_final = CalculateThirdPersonZXRotation();
+
+        // For when in fixed camera view
+        if (Input.GetAxis("LeftTriggerAxis") > 0) {
             movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
-        }
-        else
-        {
+        } else {
             transform.Rotate(Vector3.up, theta_final);
             movement_direction = transform.forward;
         }
     }
 
-    void CalculateTargetingRotation(Vector3 target)
-    {
+    void CalculateTargetingRotation(Vector3 target) {
         // Rotation to target
         Vector3 to_target = target - transform.position;
         float theta_to_target = rt.CalculateZXRotation(new Vector3(to_target.x, 0, to_target.z));
         float theta_to_forward = rt.CalculateZXRotation(new Vector3(transform.forward.x, 0, transform.forward.z));
         float theta_to_rotate = theta_to_target - theta_to_forward;
 
-        // add code to rotate around player's x axis to face the target
-
         transform.Rotate(Vector3.up, theta_to_rotate);
 
-        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0)
-        {
+        if (move) {
             float theta_final = CalculateThirdPersonZXRotation();
             movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
-        }
-        else
-        {
+        } else {
             movement_direction = Vector3.zero;
         }
     }
