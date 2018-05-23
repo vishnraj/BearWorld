@@ -19,7 +19,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
     bool jump = false;
-    bool locked_on = false;
     bool isGrounded = false;
 
     Rigidbody rb;
@@ -29,7 +28,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     void Start()
     {
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
-        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
         update = DefaultUpdate;
@@ -63,7 +61,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             case TARGETING_EVENT.LOCK_ON: {
                     update = TargetingUpdate;
                     current_target = target;
-                    locked_on = true;
                 }
                 break;
             default:
@@ -81,25 +78,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                     // so it is safe to set update back to EquippedUpdate
                     update = EquippedUpdate;
                     desired_direction = data.direction;
-                    locked_on = false;
                 }
                 break;
-            default:
-                break;
-        }
-    }
-
-
-    void InventoryEventsCallback(object data, INVENTORY_EVENT e) {
-        switch(e) {
-            case INVENTORY_EVENT.EQUIP: {
-                    if (!locked_on) {
-                        update = EquippedUpdate;
-                    } // else, we stay in targeting
-                }
-                break;
-            case INVENTORY_EVENT.UNEQUIP:
-                update = DefaultUpdate; // this should happen, no matter targeting
+            case AIMING_EVENT.AIM_OFF:
+                update = DefaultUpdate;
                 break;
             default:
                 break;
