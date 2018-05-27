@@ -9,16 +9,18 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 {
     public GameObject main_camera;
     public GameObject event_manager;
-    public bool move = false;
 
     public delegate void DoUpdate();
-    DoUpdate update;
+
+    DoUpdate update_non_move_non_fixed;
+    DoUpdate update_move_non_fixed;
+    DoUpdate update_non_move_fixed;
+    DoUpdate update_move_fixed;
 
     float movementSpeed = 100f;
     float jumpPower = 600f;
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
-    bool jump = false;
     bool isGrounded = false;
 
     Rigidbody rb;
@@ -30,7 +32,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
-        update = DefaultUpdate;
+
+        update_non_move_non_fixed = DefaultUpdate;
+        update_move_non_fixed = UnequippedMoveUpdate;
+
+        update_non_move_fixed = DefaultFixedUpdate;
+        update_move_fixed = DefaultFixedUpdate;
     }
 
     void Awake()
@@ -59,7 +66,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     void TargetingEventsCallback(GameObject target, TARGETING_EVENT e) {
         switch(e) {
             case TARGETING_EVENT.LOCK_ON: {
-                    update = TargetingUpdate;
+                    update_non_move_non_fixed = TargetingUpdate; // this is because happens in all cases and is based on target now
+                    update_move_non_fixed = DefaultUpdate; // moving doesn't influence the rotations or movement direction now
                     current_target = target;
                 }
                 break;
@@ -76,12 +84,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                     // locked_on - however in this frame, we must be
                     // equipped - else we would not receive these
                     // so it is safe to set update back to EquippedUpdate
-                    update = EquippedUpdate;
+                    update_non_move_non_fixed = EquippedUpdate;
+                    update_move_non_fixed = EquippedMoveUpdate;
                     desired_direction = data.direction;
                 }
                 break;
             case AIMING_EVENT.AIM_OFF:
-                update = DefaultUpdate;
+                update_non_move_non_fixed = DefaultUpdate;
+                update_move_non_fixed = UnequippedMoveUpdate;
                 break;
             default:
                 break;
@@ -90,64 +100,75 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void Update()
     {
-        // the input we gather here is also for FixedUpdate on the next frame
         if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0) {
-            move = true;
+            update_move_non_fixed();
+            
+            update_move_fixed = MoveFixedUpdate;
+        } else {
+            update_move_fixed = DefaultFixedUpdate;
         }
+
         if (Input.GetButton("A") && isGrounded) {
-            jump = true;
+            update_non_move_fixed = JumpingFixedUpdate;
+        } else {
+            update_non_move_fixed = DefaultFixedUpdate;
         }
 
-        update();
-    }
-
-    void DefaultUpdate() {
-        if (move) {
-            CalculateFreeRoamRotationUnequipped();
-        }
-    }
-
-    void EquippedUpdate() {
-        if (Input.GetAxis("RightTriggerAxis") == 0 && move) {
-            CalculateFreeRoamRotationEquipped();
-        } else if (Input.GetAxis("RightTriggerAxis") > 0) {
-            CalculateTargetingRotation(desired_direction);
-        }
-    }
-
-    void TargetingUpdate() {
-        CalculateTargetingRotation(current_target.transform.position);
+        update_non_move_non_fixed();
     }
 
     void FixedUpdate()
     {
-        if (move)
-        {
-            rb.AddForce(movement_direction * movementSpeed);
-            move = false;
-        }
-
-        if (jump)
-        {
-            rb.AddForce(transform.up * jumpPower);
-            jump = false;
-        }
+        update_move_fixed();
+        update_non_move_fixed();
     }
 
-    void OnCollisionEnter(Collision collide)
-    {
-        if (collide.collider.tag == "Ground")
-        {
+    void OnCollisionEnter(Collision collide) {
+        if (collide.collider.tag == "Ground") {
             isGrounded = true;
         }
     }
 
-    void OnCollisionExit(Collision collide)
-    {
-        if (collide.collider.tag == "Ground")
-        {
+    void OnCollisionExit(Collision collide) {
+        if (collide.collider.tag == "Ground") {
             isGrounded = false;
         }
+    }
+
+    void DefaultFixedUpdate() {
+        // NOOP
+    }
+
+    void MoveFixedUpdate() {
+        rb.AddForce(movement_direction * movementSpeed);
+    }
+
+    void JumpingFixedUpdate() {
+        rb.AddForce(transform.up * jumpPower);
+    }
+
+    void DefaultUpdate() {
+        // NOOP
+    }
+
+    void UnequippedMoveUpdate() {
+        FreeRoamRotationUnequipped();
+    }
+
+    void EquippedUpdate() {
+        if (Input.GetAxis("RightTriggerAxis") > 0) {
+            TargetingRotation(desired_direction);
+        }
+    }
+
+    void EquippedMoveUpdate() {
+        if (Input.GetAxis("RightTriggerAxis") == 0) {
+            FreeRoamRotationEquipped();
+        }
+    }
+
+    void TargetingUpdate() {
+        TargetingRotation(current_target.transform.position);
     }
 
     float CalculateThirdPersonZXRotation()
@@ -165,14 +186,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     // Calculates movement direction
-    void CalculateFreeRoamRotationUnequipped()
+    void FreeRoamRotationUnequipped()
     {
         float theta_final = CalculateThirdPersonZXRotation();
         transform.Rotate(Vector3.up, theta_final);
         movement_direction = transform.forward;
     }
 
-    void CalculateFreeRoamRotationEquipped() {
+    void FreeRoamRotationEquipped() {
         float theta_final = CalculateThirdPersonZXRotation();
 
         // For when in fixed camera view
@@ -184,7 +205,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
-    void CalculateTargetingRotation(Vector3 target) {
+    void TargetingRotation(Vector3 target) {
         // Rotation to target
         Vector3 to_target = target - transform.position;
         float theta_to_target = rt.CalculateZXRotation(new Vector3(to_target.x, 0, to_target.z));
@@ -193,11 +214,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
         transform.Rotate(Vector3.up, theta_to_rotate);
 
-        if (move) {
-            float theta_final = CalculateThirdPersonZXRotation();
-            movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
-        } else {
-            movement_direction = Vector3.zero;
-        }
+        float theta_final = CalculateThirdPersonZXRotation();
+        movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
     }
 }
