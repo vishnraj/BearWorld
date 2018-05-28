@@ -1,89 +1,119 @@
 ﻿using UnityEngine;
-using System.Collections;
 using Utility;
+using InventoryEvents;
+using TargetingEvents;
+using Weapon;
 
 public class FixedCamera : MonoBehaviour
 {
     public GameObject player;
+
     public bool targeting = false;
     public float target_rotation_x;
-    public float targeting_y_diff;
+
+    public float melee_y_diff;
+    public float default_y_diff;
 
     Vector3 behind_player = Vector3.zero;
     float distance = 20f;
-    float y_diff = 2.0f;
-    
-    Rotation rt;
-    ThirdPersonTargetingSystem tps;
-    PlayerAttackController pac;
 
-    // Use this for initialization
-    void Start()
-    {
-        // Ordered intialization
-        tps = player.GetComponent<ThirdPersonTargetingSystem>();
-        pac = player.GetComponent<PlayerAttackController>();
+    Rotation rt;
+
+    delegate void DoUpdate();
+    DoUpdate targeting_update = null;
+
+    public void InventoryEventCallback(object data, INVENTORY_EVENT e) {
+        switch(e) {
+            case INVENTORY_EVENT.EQUIP: {
+                    GameObject equipped = (GameObject)data;
+                    if (equipped == null) {
+                        Debug.Log("Event not for us.");
+                    }
+
+                    WEAPON_TYPE w = equipped.GetComponent<BasicWeapon>().GetWeaponType();
+
+                    switch(w) {
+                        case WEAPON_TYPE.RANGE: {
+                                targeting_update = DefaultUpdate;
+                            }
+                            break;
+                        case WEAPON_TYPE.MELEE: {
+                                targeting_update = UpdateMeeleTargetingCamera;
+                            }
+                            break;
+                        default: {
+                                targeting_update = DefaultUpdate;
+                                Debug.Log("How did we get here?");
+                            }
+                            break;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
     }
 
+    public void TargetingEventCallback(GameObject target, TARGETING_EVENT e) {
+        switch(e) {
+            case TARGETING_EVENT.LOCK_ON: {
+                    targeting = true;
+                }
+                break;
+            case TARGETING_EVENT.CAN_LOCK:
+            case TARGETING_EVENT.FREE: {
+                    targeting = false;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+ 
     private void Awake() {
         rt = new Rotation();
     }
 
-    void OnEnable()
-    {
-        RotateCameraToPlayerForward();
-
-        transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
+    void OnEnable() {
+        RotateCameraToPlayerForward(); // required at start, targeting will update after if needed
     }
 
     void LateUpdate()
     {
-        if (player != null && pac.enabled) {
-            Weapon.WEAPON_TYPE type = pac.weapon.GetWeaponType();
-            switch (type) {
-                case Weapon.WEAPON_TYPE.MELEE:
-                    UpdateNonRangeTargetingCamera();
-                    break;
-                case Weapon.WEAPON_TYPE.RANGE:
-                    UpdateRangeTargetingCamera();
-                    break;
-                default:
-                    UpdateNonRangeTargetingCamera();
-                    break;
+        if (player != null) {
+            if (targeting) {
+                RotateCameraToPlayerForward();
+                targeting_update();
+            } else {
+                DefaultUpdate();
             }
         }
     }
 
-    void RotateCameraToPlayerForward()
-    {
+    void DefaultUpdate() {
+        // Other updates may change this, so we reset it
+        if (transform.rotation.x != 0) {
+            transform.Rotate(-target_rotation_x, 0, 0);
+        }
+
+        UpdatePos(default_y_diff);
+    }
+
+    void UpdateMeeleTargetingCamera() {
+        transform.Rotate(target_rotation_x, 0, 0);
+        UpdatePos(melee_y_diff);
+    }
+
+    void UpdatePos(float y_diff) {
+        transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
+    }
+
+    void RotateCameraToPlayerForward() {
         behind_player = -player.transform.forward;
 
         transform.rotation = new Quaternion(0, 0, 0, 0);
 
         float player_facing_angle = rt.CalculateZXRotation(player.transform.forward);
         transform.Rotate(Vector3.up, player_facing_angle);
-    }
-
-    void UpdateRangeTargetingCamera() {
-        if (tps.locked_on) {
-            RotateCameraToPlayerForward();
-        }
-
-        transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
-    }
-
-    void UpdateNonRangeTargetingCamera() {
-        if (tps.locked_on) {
-            RotateCameraToPlayerForward();
-            transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + targeting_y_diff, player.transform.position.z + behind_player.z * distance);
-            transform.Rotate(target_rotation_x, 0, 0);
-            targeting = true;
-        } else {
-            if (targeting && transform.rotation.x != 0) {
-                transform.Rotate(-target_rotation_x, 0, 0);
-                targeting = false;
-            }
-            transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
-        }
     }
 }

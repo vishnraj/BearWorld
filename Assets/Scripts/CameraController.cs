@@ -24,6 +24,10 @@ public class CameraController : MonoBehaviour
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
 
+        // This has to manage FixedCamera's events setup, because FixedCamera is disabled at start
+        event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += fc.InventoryEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += fc.TargetingEventCallback;
+
         update = DefaultUpdate;
     }
 

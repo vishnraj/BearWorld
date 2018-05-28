@@ -9,7 +9,6 @@ using AimingEvents;
 public class ThirdPersonTargetingSystem : MonoBehaviour
 {
     public float current_weapon_range;
-    public bool locked_on = false;
     public bool switching = false;
     public bool forward_facing = true;
 
@@ -37,7 +36,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     Rotation rt;
     BasicCharacter c;
 
-    public delegate void DoUpdate();
+    delegate void DoUpdate();
     DoUpdate update;
 
     // Use this for initialization
@@ -123,7 +122,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         if (Input.GetAxis("LeftTriggerAxis") > 0) {
             EngageNewTarget();
-            locked_on = true;
             update = LockedOnUpdate;
         }
     }
@@ -219,7 +217,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     void DisableTargeting() {
         switching = false;
-        locked_on = false; // we will soon remove this and only events will make this known
         target = null;
         update = null; // certain things compare to this for knowning state
         enabled = false;

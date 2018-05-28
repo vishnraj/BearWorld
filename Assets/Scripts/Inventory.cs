@@ -50,7 +50,7 @@ public class Inventory : MonoBehaviour {
     BasicCharacter c;
     Weapon.WeaponFactory f;
 
-    public delegate void DoUpdate();
+    delegate void DoUpdate();
     DoUpdate update;
 
     // Use this for initialization

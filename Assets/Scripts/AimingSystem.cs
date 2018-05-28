@@ -25,7 +25,7 @@ public class AimingSystem : MonoBehaviour
     GameObject targeting_icon;
     GameObject target;
 
-    public delegate void DoUpdate();
+    delegate void DoUpdate();
     DoUpdate update;
 
     // Use this for initialization

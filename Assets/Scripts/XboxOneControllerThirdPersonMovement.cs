@@ -10,13 +10,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     public GameObject main_camera;
     public GameObject event_manager;
 
-    public delegate void DoUpdate();
-
-    DoUpdate update_non_move_non_fixed;
-    DoUpdate update_move_non_fixed;
-    DoUpdate update_non_move_fixed;
-    DoUpdate update_move_fixed;
-
     float movementSpeed = 100f;
     float jumpPower = 600f;
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
@@ -26,6 +19,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     Rigidbody rb;
     Rotation rt;
     GameObject current_target; // this is received from targeting system - it tells us where to point if locked_on
+
+    delegate void DoUpdate();
+    DoUpdate update_non_move_non_fixed;
+    DoUpdate update_move_non_fixed;
+    DoUpdate update_non_move_fixed;
+    DoUpdate update_move_fixed;
 
     void Start()
     {
