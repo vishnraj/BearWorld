@@ -13,6 +13,9 @@ public class EnemyHealth : BasicHealth
     GameObject event_manager = null;
     GameObject enemies = null;
 
+    float start_spawn = 0;
+    float spawn_wait = 5;
+
     TargetingPublisher targeting_publisher;
 
     // Use this for initialization
@@ -39,6 +42,10 @@ public class EnemyHealth : BasicHealth
     // Update is called once per frame
     void Update()
     {
+        if (!can_damage && (Time.time - start_spawn) >= spawn_wait) {
+            can_damage = true;
+        }
+
         if (health <= 0) {
             if (GetComponent<EnemyExplosion>() != null) {
                 // from this point (unless we have reform script)
@@ -86,6 +93,11 @@ public class EnemyHealth : BasicHealth
         }
     }
 
+    private void OnEnable() {
+        can_damage = false;
+        start_spawn = Time.time;
+    }
+
     public override void Notify() {
         if (player_locked_on && start) {
             publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
@@ -96,7 +108,7 @@ public class EnemyHealth : BasicHealth
         switch (e) {
             case TARGETING_EVENT.FREE: {
                     if (player_locked_on) {
-                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.FREE);
                         player_locked_on = false;
                     }
                 }

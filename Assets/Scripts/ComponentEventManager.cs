@@ -79,7 +79,7 @@ namespace AimingEvents {
 }
 
 namespace EnemyHealthEvents {
-    public enum ENEMY_HEALTH_EVENT { INIT, UPDATE, DESTROY };
+    public enum ENEMY_HEALTH_EVENT { INIT, UPDATE, FREE, DESTROY };
 
     public class EnemyHealthData {
         public int id = -1;

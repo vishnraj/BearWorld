@@ -5,6 +5,7 @@ using Utility;
 using InputEvents;
 using TargetingEvents;
 using AimingEvents;
+using EnemyHealthEvents;
 
 public class ThirdPersonTargetingSystem : MonoBehaviour
 {
@@ -54,6 +55,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventsCallback;
+        event_manager.GetComponent<ComponentEventManager>().enemy_health_publisher.EnemyHealthEvent += EnemyHealthEventsCallback;
 
         update = null;
     }
@@ -89,7 +91,6 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         }
 
         if (!IsValidTarget(target)) {
-            // can we get a new target, if we invalidated the previous one
             target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetAllEnemies());
 
             if (target == null) {
@@ -185,7 +186,32 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         }
     }
 
+    void EnemyHealthEventsCallback(EnemyHealthData data, ENEMY_HEALTH_EVENT e) {
+        switch(e) {
+            case ENEMY_HEALTH_EVENT.DESTROY: {
+                    // an enemy health even destory may not always indicate that
+                    // we need to reset the target, but if needed then we do it
+                    if (data.health <= 0 || !Enemies.GetComponent<EnemyTracker>().FindEnemy(target)) {
+                        target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetAllEnemies());
+
+                        if (target == null) {
+                            DisableTargeting();
+                            return;
+                        }
+
+                        EngageNewTarget();
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     bool IsValidTarget(GameObject _target) {
+        // sanity checks, but neither should happen, because the
+        // EnemyHealthEventsCallback should capture when a destroy occurs
+        // meaning if the target suddenly becomes invalid, we reset it there
         if (_target != null && Enemies.GetComponent<EnemyTracker>().FindEnemy(_target)) {
             Vector3 to_target = _target.transform.position - transform.position;
             if (!(to_target.magnitude <= current_weapon_range)) {

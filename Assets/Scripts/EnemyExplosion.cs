@@ -82,7 +82,6 @@ public class EnemyExplosion : MonoBehaviour {
             c_health.enabled = true;
 
             rb.AddExplosionForce(power, transform.position, radius, upward);
-
             rb.isKinematic = false;
         }
 

@@ -4,6 +4,10 @@ public class BasicHealth : MonoBehaviour {
     public float max_health;
     public float health;
 
+    protected bool can_damage = true; // this is something to provide a few invincibility frames
+                                      // when the enemy is first spawned - set it in derived class
+                                      // components where needed, but by default it will be true
+
     // Use this for initialization
     void Start () {
 		
@@ -30,16 +34,20 @@ public class BasicHealth : MonoBehaviour {
     }
 
     public void Damage(float incoming_damage) {
-        health -= incoming_damage;
-        Notify();
+        if (can_damage) {
+            health -= incoming_damage;
+            Notify();
+        }
     }
 
     private void OnTriggerEnter(Collider other) {
         DamageDealer d = other.gameObject.GetComponent<DamageDealer>();
 
         if (d != null && d.enabled && d.GetOriginTag() != tag) {
-            health = d.DealDamage(health);
-            Notify();
+            if (can_damage) {
+                health = d.DealDamage(health);
+                Notify();
+            }
         }
     }
 }

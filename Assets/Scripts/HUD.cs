@@ -110,7 +110,8 @@ public class HUD : MonoBehaviour {
                         data.health);
                 }
                 break;
-            case ENEMY_HEALTH_EVENT.DESTROY: {
+            case ENEMY_HEALTH_EVENT.DESTROY:
+            case ENEMY_HEALTH_EVENT.FREE: {
                     if (enemy_health_remaining.ContainsKey(data.id)) {
                         Destroy(enemy_health_remaining[data.id]);
                         enemy_health_remaining.Remove(data.id);

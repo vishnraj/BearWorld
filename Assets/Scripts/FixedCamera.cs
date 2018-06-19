@@ -17,6 +17,7 @@ public class FixedCamera : MonoBehaviour
     Vector3 behind_player = Vector3.zero;
     float distance = 20f;
 
+    GameObject target;
     Rotation rt;
 
     delegate void DoUpdate();
@@ -54,9 +55,10 @@ public class FixedCamera : MonoBehaviour
         }
     }
 
-    public void TargetingEventCallback(GameObject target, TARGETING_EVENT e) {
+    public void TargetingEventCallback(GameObject _target, TARGETING_EVENT e) {
         switch(e) {
             case TARGETING_EVENT.LOCK_ON: {
+                    target = _target;
                     targeting = true;
                 }
                 break;
@@ -82,30 +84,35 @@ public class FixedCamera : MonoBehaviour
     {
         if (player != null) {
             if (targeting) {
-                RotateCameraToPlayerForward();
+                //RotateCameraToPlayerForward();
+                behind_player = -player.transform.forward;
                 targeting_update();
+                RotateToTarget();
             } else {
+                if (transform.rotation.x != 0 || transform.rotation.z != 0) {
+                    RotateCameraToPlayerForward();
+                }
                 DefaultUpdate();
             }
         }
     }
 
     void DefaultUpdate() {
-        // Other updates may change this, so we reset it
-        if (transform.rotation.x != 0) {
-            transform.Rotate(-target_rotation_x, 0, 0);
-        }
-
         UpdatePos(default_y_diff);
     }
 
     void UpdateMeeleTargetingCamera() {
-        transform.Rotate(target_rotation_x, 0, 0);
+        //transform.Rotate(target_rotation_x, 0, 0);
         UpdatePos(melee_y_diff);
     }
 
     void UpdatePos(float y_diff) {
         transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
+    }
+
+    void RotateToTarget() {
+        Vector3 to_target = target.transform.position - transform.position;
+        transform.rotation = Quaternion.LookRotation(to_target);
     }
 
     void RotateCameraToPlayerForward() {
