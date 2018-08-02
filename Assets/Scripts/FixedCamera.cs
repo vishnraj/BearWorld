@@ -35,11 +35,11 @@ public class FixedCamera : MonoBehaviour
 
                     switch(w) {
                         case WEAPON_TYPE.RANGE: {
-                                targeting_update = DefaultUpdate;
+                                targeting_update = RangeUpdate;
                             }
                             break;
                         case WEAPON_TYPE.MELEE: {
-                                targeting_update = UpdateMeeleTargetingCamera;
+                                targeting_update = MeeleUpdate;
                             }
                             break;
                         default: {
@@ -84,26 +84,46 @@ public class FixedCamera : MonoBehaviour
     {
         if (player != null) {
             if (targeting) {
-                //RotateCameraToPlayerForward();
-                behind_player = -player.transform.forward;
                 targeting_update();
-                RotateToTarget();
             } else {
-                if (transform.rotation.x != 0 || transform.rotation.z != 0) {
-                    RotateCameraToPlayerForward();
-                }
                 DefaultUpdate();
             }
         }
     }
 
     void DefaultUpdate() {
+        RotateCameraToPlayerForward();
+        if (transform.rotation.x != 0) {
+            transform.Rotate(-target_rotation_x, 0, 0);
+        }
+
         UpdatePos(default_y_diff);
     }
 
-    void UpdateMeeleTargetingCamera() {
-        //transform.Rotate(target_rotation_x, 0, 0);
+    void RangeUpdate() {
+        RotateCameraToPlayerForward();
+        if (transform.rotation.x != 0) {
+            transform.Rotate(-target_rotation_x, 0, 0);
+        }
+
+        //behind_player = -player.transform.forward;
+
+        UpdatePos(default_y_diff);
+
+        //RotateToTarget();
+    }
+
+    void MeeleUpdate() {
+        RotateCameraToPlayerForward();
+        if (transform.rotation.x == 0) {
+            transform.Rotate(target_rotation_x, 0, 0);
+        }
+
+        //behind_player = -player.transform.forward;
+
         UpdatePos(melee_y_diff);
+
+        //RotateToTarget();
     }
 
     void UpdatePos(float y_diff) {
