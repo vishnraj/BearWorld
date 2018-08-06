@@ -15,7 +15,7 @@ public abstract class DamageDealer : MonoBehaviour {
 		
 	}
 
-    public abstract float DealDamage(float health);
+    public virtual float DealDamage(float health) { return health; /* do nothing by default */ }
 
     public void SetOriginTag(string t) {
         origin_tag = t;

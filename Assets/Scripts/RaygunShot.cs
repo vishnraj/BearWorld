@@ -25,8 +25,7 @@ public class RaygunShot : DamageDealer {
     // Update is called once per frame
     void Update()
     {
-        if (expired && Time.time - start_time_of_destruction >= interval_before_destruction)
-        {
+        if (expired && Time.time - start_time_of_destruction >= interval_before_destruction) {
             Destroy(gameObject);
         }
         else if (fired && !expired && Vector3.Magnitude(final_location - transform.position) <= start_distance_before_destruction)
@@ -49,8 +48,12 @@ public class RaygunShot : DamageDealer {
             GetComponent<SphereCollider>().enabled = false;
             GetComponent<MeshRenderer>().enabled = false;
 
-            expired = true;
-            start_time_of_destruction = Time.time;
+            BasicHealth h = collide.gameObject.GetComponent<BasicHealth>();
+            if (h != null) {
+                h.Damage(damage);
+            }
+
+            Destroy(gameObject);
         }
     }
 
@@ -60,11 +63,5 @@ public class RaygunShot : DamageDealer {
         // fired the object in the direction that the shot was fired
         final_location = direction * range + transform.position;
         fired = true;
-    }
-
-    public override float DealDamage(float health) {
-        health -= damage;
-        Destroy(gameObject);
-        return health;
     }
 }

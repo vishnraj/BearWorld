@@ -6,15 +6,16 @@ using EnemyHealthEvents;
 public class EnemyHealth : BasicHealth
 {
     public List<string> random_drop_list;
+    public float invincibility_seconds;
+
+    public bool player_locked_on = false; // this shouldn't be modified in editor, but scripts that interact with this specifically (mainly behavior scripts generated from this script)
     bool start = false;
-    public bool player_locked_on = false;
 
     EnemyHealthEventPublisher publisher = null;
     GameObject event_manager = null;
     GameObject enemies = null;
 
     float start_spawn = 0;
-    float spawn_wait = 5;
 
     TargetingPublisher targeting_publisher;
 
@@ -42,7 +43,7 @@ public class EnemyHealth : BasicHealth
     // Update is called once per frame
     void Update()
     {
-        if (!can_damage && (Time.time - start_spawn) >= spawn_wait) {
+        if (!can_damage && (Time.time - start_spawn) >= invincibility_seconds) {
             can_damage = true;
         }
 

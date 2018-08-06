@@ -34,7 +34,7 @@ public class RaygunShooting : BasicWeapon
         RaygunShot s = shot.GetComponent<RaygunShot>();
         s.SetOriginTag(c.tag);
 
-        Vector3 pos = transform.position + transform.forward;
+        Vector3 pos = transform.position;
         shot.transform.position = pos;
 
         s.SetDirection(c.GetAimingDirection(), range);
@@ -55,7 +55,7 @@ public class RaygunShooting : BasicWeapon
 
                     // The two layers that are basically important for the game, regarding what can be hit and
                     // what can't be (enemies, players and other objects in the scene that are collidable)
-                    int layers = 1 << (LayerMask.NameToLayer("Enemy_Layer") | LayerMask.NameToLayer("Current_Realm"));
+                    int layers = (1 << LayerMask.NameToLayer("Enemy_Layer")) | (1 << LayerMask.NameToLayer("Current_Realm"));
 
                     if (Physics.Raycast(transform.position, to_target, out hit, range, layers) && hit.collider.gameObject.GetComponent<BasicHealth>() != null) {
                         GameObject hit_obj = hit.collider.gameObject;
@@ -68,6 +68,7 @@ public class RaygunShooting : BasicWeapon
 
                             RaygunShot s = shot.GetComponent<RaygunShot>();
                             hit_obj.GetComponent<BasicHealth>().Damage(s.damage);
+                            c.DecrementAmmoAmount();
 
                             Destroy(shot, lock_on_shot_delay);
                         }
