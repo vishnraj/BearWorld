@@ -69,6 +69,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     {
         if (!start) {
             publisher.OnTargetingEvent(null, TARGETING_EVENT.INIT);
+            c.SetInLockOn(false);
+
             start = true;
             enabled = false; // after start, this really should only ever be enabled by AimingEvents
             return;
@@ -111,7 +113,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         }
 
         if (IsValidTarget(target)) {
-            c.SetTarget(target.transform.position); // required to keep grabbing target position
+            c.SetTarget(target); // required to keep grabbing target position
+            c.SetAimingDirection(target.transform.position);
         }
     }
 
@@ -150,13 +153,15 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         switch (e) {
             case AIMING_EVENT.SCANNING: {
                     direction = data.direction;
-                    c.SetTarget(direction);
+                    c.SetAimingDirection(direction);
 
                     if (update == CanLockUpdate) {
                         update = null;
                         enabled = false;
                     }
+
                     publisher.OnTargetingEvent(null, TARGETING_EVENT.FREE);
+                    c.SetInLockOn(false);
                 }
                 break;
             case AIMING_EVENT.FOUND: {
@@ -166,9 +171,12 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                     }
 
                     target = _target;
-                    c.SetTarget(target.transform.position);
+                    c.SetTarget(target);
+                    c.SetAimingDirection(target.transform.position);
 
                     publisher.OnTargetingEvent(null, TARGETING_EVENT.CAN_LOCK);
+                    c.SetInLockOn(false);
+
                     update = CanLockUpdate;
                     if (!paused) {
                         enabled = true;
@@ -191,7 +199,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             case ENEMY_HEALTH_EVENT.DESTROY: {
                     // an enemy health even destory may not always indicate that
                     // we need to reset the target, but if needed then we do it
-                    if (data.health <= 0 || !Enemies.GetComponent<EnemyTracker>().FindEnemy(target)) {
+                    if (!Enemies.GetComponent<EnemyTracker>().FindEnemy(target)) {
                         target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetAllEnemies());
 
                         if (target == null) {
@@ -244,14 +252,22 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     void DisableTargeting() {
         switching = false;
         target = null;
+        c.SetInLockOn(false);
+        c.SetTarget(null);
+
         update = null; // certain things compare to this for knowning state
         enabled = false;
+
         publisher.OnTargetingEvent(null, TARGETING_EVENT.FREE);
     }
 
     void EngageNewTarget() {
-        c.SetTarget(target.transform.position);
+        c.SetTarget(target);
+        c.SetAimingDirection(target.transform.position);
+        c.SetInLockOn(true);
+
         previous_target_pos = target.transform.position;
+
         publisher.OnTargetingEvent(target, TARGETING_EVENT.LOCK_ON);
     }
 

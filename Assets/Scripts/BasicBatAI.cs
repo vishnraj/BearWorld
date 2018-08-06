@@ -35,7 +35,8 @@ public class BasicBatAI : BasicEnemyAI {
         // travel towards target, without changing the y direction
 
         if (target != null) {
-            c.SetTarget(target.transform.position);
+            c.SetTarget(target);
+            c.SetAimingDirection(target.transform.position);
 
             // need to preserve height
             Vector3 xz_target_pos = new Vector3(target.transform.position.x, transform.position.y, target.transform.position.z);

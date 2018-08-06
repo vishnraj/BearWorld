@@ -52,7 +52,8 @@ public abstract class BasicEnemyAI : MonoBehaviour {
         }
 
         if (target != null) {
-            c.SetTarget(target.transform.position);
+            c.SetTarget(target);
+            c.SetAimingDirection(target.transform.position);
         }
     }
 

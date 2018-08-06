@@ -88,6 +88,10 @@ public abstract class BasicWeapon : MonoBehaviour {
             Debug.Log("Error, weapon not assigned to parent.");
             return;
         }
+
+        // this is important - make sure that the weapon itself
+        // is never used during a hitscan
+        gameObject.layer = LayerMask.NameToLayer("Default");
     }
 
     public Weapon.WEAPON_TYPE GetWeaponType() { return type; }

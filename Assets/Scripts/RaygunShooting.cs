@@ -4,7 +4,11 @@ using System.Collections;
 public class RaygunShooting : BasicWeapon
 {
     public float fire_interval;
+    public float frac_to_target;
+    public float lock_on_shot_delay;
+
     bool currently_firing = false;
+
     IEnumerator firing;
     IEnumerator end_step = null;
 
@@ -24,23 +28,55 @@ public class RaygunShooting : BasicWeapon
        
     }
 
+
+    void DefaultShooting() {
+        GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
+        RaygunShot s = shot.GetComponent<RaygunShot>();
+        s.SetOriginTag(c.tag);
+
+        Vector3 pos = transform.position + transform.forward;
+        shot.transform.position = pos;
+
+        s.SetDirection(c.GetAimingDirection(), range);
+        c.DecrementAmmoAmount();
+
+        s.enabled = true;
+    }
+
     IEnumerator Fire()
     {
         while (true)
         {
             if (c.GetAmmoAmount() != 0 && !currently_firing)
             {
-                GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
-                RaygunShot s = shot.GetComponent<RaygunShot>();
-                s.SetOriginTag(c.tag);
+                if (c.InLockOn()) {
+                    RaycastHit hit;
+                    Vector3 to_target = c.GetTarget().transform.position - transform.position;
 
-                Vector3 pos = transform.position + transform.forward;
-                shot.transform.position = pos;
+                    // The two layers that are basically important for the game, regarding what can be hit and
+                    // what can't be (enemies, players and other objects in the scene that are collidable)
+                    int layers = 1 << (LayerMask.NameToLayer("Enemy_Layer") | LayerMask.NameToLayer("Current_Realm"));
 
-                s.SetDirection(c.GetTarget(), range);
-                c.DecrementAmmoAmount();
+                    if (Physics.Raycast(transform.position, to_target, out hit, range, layers) && hit.collider.gameObject.GetComponent<BasicHealth>() != null) {
+                        GameObject hit_obj = hit.collider.gameObject;
 
-                s.enabled = true;
+                        // effectively no friendly fire
+                        if (c.tag != hit_obj.tag) {
+                            GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
+                            shot.GetComponent<SphereCollider>().enabled = false; // we don't want a trigger
+                            shot.transform.position = transform.position + to_target * frac_to_target;
+
+                            RaygunShot s = shot.GetComponent<RaygunShot>();
+                            hit_obj.GetComponent<BasicHealth>().Damage(s.damage);
+
+                            Destroy(shot, lock_on_shot_delay);
+                        }
+                    } else {
+                        DefaultShooting(); // simulate an actual gun fire; even if it can't hit, it still would fly in that general direction
+                    }
+                } else {
+                    DefaultShooting();
+                }
 
                 currently_firing = true;
             }

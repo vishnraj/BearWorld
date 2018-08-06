@@ -52,21 +52,23 @@ public class EnemyHealth : BasicHealth
                 // we will delagate death of the enemy to the
                 // enemy explosion script - but we don't destroy
                 // this object - CompositeEnemy will take care of this
+                GetComponent<EnemyExplosion>().Explode();
+
                 if (player_locked_on && start) {
+                    enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
                     publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
                 }
                 
-                enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
-                GetComponent<EnemyExplosion>().Explode();
                 enabled = false;
                 return;
             }
 
             if (player_locked_on && start) {
+                enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
                 publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+            } else {
+                enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
             }
-
-            enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
 
             if (random_drop_list.Count != 0) {
                 Items.DropFactory f = new Items.DropFactory();
