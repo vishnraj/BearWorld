@@ -71,8 +71,8 @@ public class EnemyExplosion : MonoBehaviour {
                 continue;
             }
 
-            if (h.player_locked_on) {
-                c_health.player_locked_on = true;
+            if (h.GetPlayerLockedOn()) {
+                c_health.SetPlayerLockedOn(true);
             }
 
             col.enabled = true;

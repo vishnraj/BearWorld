@@ -8,7 +8,7 @@ public class EnemyHealth : BasicHealth
     public List<string> random_drop_list;
     public float invincibility_seconds;
 
-    public bool player_locked_on = false; // this shouldn't be modified in editor, but scripts that interact with this specifically (mainly behavior scripts generated from this script)
+    bool player_locked_on = false;
     bool start = false;
 
     EnemyHealthEventPublisher publisher = null;
@@ -55,8 +55,9 @@ public class EnemyHealth : BasicHealth
                 // this object - CompositeEnemy will take care of this
                 GetComponent<EnemyExplosion>().Explode();
 
+                enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
+
                 if (player_locked_on && start) {
-                    enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
                     publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
                 }
                 
@@ -127,5 +128,13 @@ public class EnemyHealth : BasicHealth
             default:
                 break;
         }
-    }    
+    }
+    
+    public void SetPlayerLockedOn(bool locked_on) {
+        player_locked_on = locked_on;
+    }
+
+    public bool GetPlayerLockedOn() {
+        return player_locked_on;
+    }
 }
