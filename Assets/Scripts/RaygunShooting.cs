@@ -9,6 +9,8 @@ public class RaygunShooting : BasicWeapon
 
     bool currently_firing = false;
 
+    Vector3 target_position = Vector3.zero;
+
     IEnumerator firing;
     IEnumerator end_step = null;
 
@@ -25,7 +27,9 @@ public class RaygunShooting : BasicWeapon
     // Update is called once per frame
     void Update()
     {
-       
+        if (c.InLockOn()) {
+            target_position = c.GetTarget().transform.position;
+        }
     }
 
 
@@ -51,7 +55,7 @@ public class RaygunShooting : BasicWeapon
             {
                 if (c.InLockOn()) {
                     RaycastHit hit;
-                    Vector3 to_target = c.GetTarget().transform.position - transform.position;
+                    Vector3 to_target = target_position - transform.position;
 
                     // The two layers that are basically important for the game, regarding what can be hit and
                     // what can't be (enemies, players and other objects in the scene that are collidable)
