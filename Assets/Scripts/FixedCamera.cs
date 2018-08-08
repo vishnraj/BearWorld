@@ -14,9 +14,15 @@ public class FixedCamera : MonoBehaviour
     public float range_y_diff;
     public float default_y_diff;
 
-    public float distance;
-    public float adjust_y_lerp;
-    public float y_rotate_bound;
+    public float meele_distance;
+    public float range_distance;
+    public float default_distance;
+
+    public float meele_y_lerp_ratio;
+    public float range_y_lerp_ratio;
+
+    public float meele_y_rotate_bound;
+    public float range_y_rotate_bound;
 
     Vector3 behind_player = Vector3.zero;
 
@@ -97,34 +103,34 @@ public class FixedCamera : MonoBehaviour
     void DefaultUpdate() {
         RotateCameraToPlayerForward();
 
-        UpdatePos(default_y_diff);
+        UpdatePos(default_y_diff, default_distance);
     }
 
     void RangeUpdate() {
         RotateCameraToPlayerForward();
 
         behind_player = -player.transform.forward;
-        float y_diff = Mathf.Lerp(target.transform.position.y, player.transform.position.y, adjust_y_lerp);
-        UpdatePos(-y_diff + range_y_diff);
+        float y_diff = Mathf.Lerp(target.transform.position.y, player.transform.position.y, range_y_lerp_ratio);
+        UpdatePos(-y_diff + range_y_diff, range_distance);
 
-        RotateToTargetY();
+        RotateToTargetY(range_y_rotate_bound);
     }
 
     void MeeleUpdate() {
         RotateCameraToPlayerForward();
 
         behind_player = -player.transform.forward;
-        float y_diff = Mathf.Lerp(target.transform.position.y, player.transform.position.y, adjust_y_lerp);
-        UpdatePos(-y_diff + melee_y_diff);
+        float y_diff = Mathf.Lerp(target.transform.position.y, player.transform.position.y, meele_y_lerp_ratio);
+        UpdatePos(-y_diff + melee_y_diff, meele_distance);
 
-        RotateToTargetY();
+        RotateToTargetY(meele_y_rotate_bound);
     }
 
-    void UpdatePos(float y_diff) {
+    void UpdatePos(float y_diff, float distance) {
         transform.position = new Vector3(player.transform.position.x + behind_player.x * distance, player.transform.position.y + y_diff, player.transform.position.z + behind_player.z * distance);
     }
 
-    void RotateToTargetY() {
+    void RotateToTargetY(float y_rotate_bound) {
         Vector3 to_target = target.transform.position - transform.position;
         Quaternion looking = Quaternion.LookRotation(to_target);
 
