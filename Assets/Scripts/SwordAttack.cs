@@ -5,12 +5,13 @@ public class SwordAttack : BasicWeapon {
 
     // Use this for initialization
     void Start() {
-        blade = transform.Find("Blade").GetComponent<SwordDamage>();
+        blade = transform.Find(Weapon.DamagerNames.BLADE).GetComponent<SwordDamage>();
         blade.SetOriginTag(c.tag);
     }
 
     private void Awake() {
         type = Weapon.WEAPON_TYPE.MELEE;
+        weapon_name = Weapon.WeaponNames.SWORD;
     }
 
     // Update is called once per frame
@@ -30,6 +31,9 @@ public class SwordAttack : BasicWeapon {
 
     public override void Init() {
         base.Init();
+
+        type = Weapon.WEAPON_TYPE.MELEE;
+        weapon_name = Weapon.WeaponNames.SWORD;
 
         Vector3 pos = transform.position;
         pos += transform.forward * .3f;

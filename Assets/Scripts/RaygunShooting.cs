@@ -22,6 +22,7 @@ public class RaygunShooting : BasicWeapon
 
     private void Awake() {
         type = Weapon.WEAPON_TYPE.RANGE;
+        weapon_name = Weapon.WeaponNames.RAYGUN;
     }
 
     // Update is called once per frame
@@ -116,6 +117,9 @@ public class RaygunShooting : BasicWeapon
 
     public override void Init() {
         base.Init();
+
+        type = Weapon.WEAPON_TYPE.RANGE;
+        weapon_name = Weapon.WeaponNames.RAYGUN;
 
         Vector3 pos = transform.position;
         pos += transform.forward * .3f;

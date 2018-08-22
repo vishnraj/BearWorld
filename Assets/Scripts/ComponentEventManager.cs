@@ -107,12 +107,39 @@ namespace EnemyHealthEvents {
     }
 }
 
+namespace PlayerAttackEvents {
+    public enum PLAYER_ATTACK_EVENT { JUMP_ATTACK };
+
+    public class PlayerAttackData {
+        public Vector3 jump_destination = Vector3.zero;
+
+        public PlayerAttackData(Vector3 _jump_destination) {
+            jump_destination = _jump_destination;
+        }
+    }
+
+    public class PlayerAttackControllerPublisher {
+        public delegate void PlayerAttackControllerHandler(PlayerAttackData data, PLAYER_ATTACK_EVENT e);
+        public event PlayerAttackControllerHandler PlayerAttackEvent;
+
+        public void OnPlayerAttackEvent(PlayerAttackData data, PLAYER_ATTACK_EVENT e) {
+            if (PlayerAttackEvent != null) {
+                PlayerAttackEvent(data, e);
+            }
+            else {
+                Debug.Log("NOOP");
+            }
+        }
+    }
+}
+
 public class ComponentEventManager : MonoBehaviour {
     public InventoryEvents.InventoryPublisher inventory_publisher;
     public TargetingEvents.TargetingPublisher targeting_publisher;
     public PlayerHealthEvents.PlayerHealthPublisher health_publisher;
     public EnemyHealthEvents.EnemyHealthEventPublisher enemy_health_publisher;
     public AimingEvents.AimingPublisher aiming_publisher;
+    public PlayerAttackEvents.PlayerAttackControllerPublisher attacks_publisher;
 
     // Use this for initialization
     void Start () {
@@ -125,6 +152,7 @@ public class ComponentEventManager : MonoBehaviour {
         health_publisher = new PlayerHealthEvents.PlayerHealthPublisher();
         enemy_health_publisher = new EnemyHealthEvents.EnemyHealthEventPublisher();
         aiming_publisher = new AimingEvents.AimingPublisher();
+        attacks_publisher = new PlayerAttackEvents.PlayerAttackControllerPublisher();
     }
 	
 	// Update is called once per frame

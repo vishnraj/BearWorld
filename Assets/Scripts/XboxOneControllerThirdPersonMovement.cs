@@ -14,7 +14,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     float jump_power = 600f;
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
-    bool isGrounded = false;
+    bool grounded = false;
 
     Rigidbody rb;
     Rotation rt;
@@ -25,6 +25,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     DoUpdate update_xz_user_in_non_fixed;
     DoUpdate update_non_xz_user_in_fixed;
     DoUpdate update_xz_user_in_fixed;
+    DoUpdate update;
 
     void Start()
     {
@@ -32,11 +33,13 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
 
-        update_non_xz_user_in_non_fixed = DefaultUpdate;
+        update_non_xz_user_in_non_fixed = DefaultNonFixedUpdate;
         update_xz_user_in_non_fixed = UnequippedMoveUpdate;
 
         update_non_xz_user_in_fixed = DefaultFixedUpdate;
         update_xz_user_in_fixed = DefaultFixedUpdate;
+
+        update = DefaultUpdate;
     }
 
     void Awake()
@@ -47,7 +50,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void GlobalInputEventsCallback(object sender, InputEvents.INPUT_EVENT e) {
+    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
         switch (e) {
             case INPUT_EVENT.PAUSE: {
                     enabled = false;
@@ -66,7 +69,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         switch(e) {
             case TARGETING_EVENT.LOCK_ON: {
                     update_non_xz_user_in_non_fixed = TargetingUpdate; // this is because happens in all cases and is based on target now
-                    update_xz_user_in_non_fixed = DefaultUpdate; // moving doesn't influence the rotations or movement direction now
+                    update_xz_user_in_non_fixed = DefaultNonFixedUpdate; // moving doesn't influence the rotations or movement direction now
                     current_target = target;
                 }
                 break;
@@ -89,7 +92,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                 }
                 break;
             case AIMING_EVENT.AIM_OFF:
-                update_non_xz_user_in_non_fixed = DefaultUpdate;
+                update_non_xz_user_in_non_fixed = DefaultNonFixedUpdate;
                 update_xz_user_in_non_fixed = UnequippedMoveUpdate;
                 break;
             default:
@@ -99,21 +102,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0) {
-            update_xz_user_in_non_fixed();
-            
-            update_xz_user_in_fixed = XZuser_inFixedUpdate;
-        } else {
-            update_xz_user_in_fixed = DefaultFixedUpdate;
-        }
-
-        if (Input.GetButton("A") && isGrounded) {
-            update_non_xz_user_in_fixed = JumpingFixedUpdate;
-        } else {
-            update_non_xz_user_in_fixed = DefaultFixedUpdate;
-        }
-
-        update_non_xz_user_in_non_fixed();
+        update();
     }
 
     void FixedUpdate()
@@ -124,21 +113,41 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void OnCollisionEnter(Collision collide) {
         if (collide.collider.tag == "Ground") {
-            isGrounded = true;
+            grounded = true;
         }
     }
 
     void OnCollisionExit(Collision collide) {
         if (collide.collider.tag == "Ground") {
-            isGrounded = false;
+            grounded = false;
         }
+    }
+
+    void DefaultUpdate() {
+        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0) {
+            update_xz_user_in_non_fixed();
+
+            update_xz_user_in_fixed = XZUserInFixedUpdate;
+        }
+        else {
+            update_xz_user_in_fixed = DefaultFixedUpdate;
+        }
+
+        if (Input.GetButton("A") && grounded) {
+            update_non_xz_user_in_fixed = JumpingFixedUpdate;
+        }
+        else {
+            update_non_xz_user_in_fixed = DefaultFixedUpdate;
+        }
+
+        update_non_xz_user_in_non_fixed();
     }
 
     void DefaultFixedUpdate() {
         // NOOP
     }
 
-    void XZuser_inFixedUpdate() {
+    void XZUserInFixedUpdate() {
         rb.AddForce(movement_direction * movement_speed);
     }
 
@@ -146,7 +155,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         rb.AddForce(transform.up * jump_power);
     }
 
-    void DefaultUpdate() {
+    void DefaultNonFixedUpdate() {
         // NOOP
     }
 

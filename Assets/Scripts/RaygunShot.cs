@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using Utility;
 
 public class RaygunShot : DamageDealer {
     public float shot_speed;
@@ -20,6 +19,10 @@ public class RaygunShot : DamageDealer {
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+    }
+
+    private void Awake() {
+        damager_name = Weapon.DamagerNames.LASER_SHOT;
     }
 
     // Update is called once per frame
@@ -63,5 +66,11 @@ public class RaygunShot : DamageDealer {
         // fired the object in the direction that the shot was fired
         final_location = direction * range + transform.position;
         fired = true;
+    }
+
+    public override void Init() {
+        base.Init();
+
+        damager_name = Weapon.DamagerNames.LASER_SHOT;
     }
 }

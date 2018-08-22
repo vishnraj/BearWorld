@@ -11,6 +11,8 @@ namespace Items {
         public Ammo(float _amount, GameObject _type) {
             ammo_amount = _amount;
             ammo_type = _type;
+            ammo_type.GetComponent<DamageDealer>().Init(); // there is no instance of the object (Awake not called),
+                                                           // so we instead use init to intialize required members
         }
     }
 
@@ -137,8 +139,14 @@ public class Inventory : MonoBehaviour {
         // using pub/sub via observer - we can set this class
         // to observer the different items that are currently
         // in the player's possession
-        if (c.GetAmmoType() != null && ammo_inventory[equipped.name].ammo_amount != c.GetAmmoAmount()) {
-            ammo_inventory[equipped.name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
+
+        string equipped_name = "";
+        if (equipped != null) {
+            equipped_name = equipped.GetComponent<BasicWeapon>().GetWeaponName();
+        }
+
+        if (c.GetAmmoType() != null && ammo_inventory[equipped_name].ammo_amount != c.GetAmmoAmount()) {
+            ammo_inventory[equipped_name].ammo_amount = c.GetAmmoAmount(); // maintain consistency of inventory
             event_manager.GetComponent<ComponentEventManager>().inventory_publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
         }
     }
@@ -206,6 +214,10 @@ public class Inventory : MonoBehaviour {
                 }
             }
 
+            // should consider this below code getting moved
+            // into the weapon namespace as a function for drop
+            // similar to how we have a spawn function for equipping
+
             GameObject item = (GameObject)Instantiate(Resources.Load("Prefabs/" + dropped));
             item.transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
             item.GetComponent<BoxCollider>().enabled = true;
@@ -221,29 +233,26 @@ public class Inventory : MonoBehaviour {
 
     private void pick_up(GameObject item) {
         if (Input.GetButton("X")) {
-            if (item.name.Contains(" ")) {
-                item.name = item.name.Substring(0, item.name.LastIndexOf(" "));
-            } else if (item.name.Contains("(")) {
-                item.name = item.name.Substring(0, item.name.LastIndexOf("("));
-            }
+            string weapon_name = item.GetComponent<BasicWeapon>().GetWeaponName();
 
-            if (inventory.Count < max_items && !inventory.Contains(item.name)) {
-                inventory.Add(item.name);
+            if (inventory.Count < max_items && !inventory.Contains(weapon_name)) {
+                inventory.Add(weapon_name);
 
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
-                    ammo_inventory.Add(item.name, new Items.Ammo(ammo.ammo_amount, ammo.ammo_type));
+                    ammo_inventory.Add(weapon_name, new Items.Ammo(ammo.ammo_amount, ammo.ammo_type));
                 }
 
                 Destroy(item);
-            } else if (inventory.Contains(item.name)) {
+            } else if (inventory.Contains(weapon_name)) {
                 if (item.GetComponent<BasicWeapon>().GetWeaponType() == Weapon.WEAPON_TYPE.RANGE) {
                     HeldAmmo ammo = item.GetComponent<HeldAmmo>();
-                    if ((equipped == null) || (equipped != null && item.name != equipped.name)) {
-                        increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, false);
+                    string equipped_name = equipped.GetComponent<BasicWeapon>().GetWeaponName();
+                    if ((equipped == null) || (equipped != null && weapon_name != equipped_name)) {
+                        increase_inventory_ammo(weapon_name, ammo.weapon_ammo_cap, ammo.ammo_amount, false);
                     } else {
-                        increase_inventory_ammo(item.name, ammo.weapon_ammo_cap, ammo.ammo_amount, true);
-                        c.SetAmmoAmount(ammo_inventory[item.name].ammo_amount);
+                        increase_inventory_ammo(weapon_name, ammo.weapon_ammo_cap, ammo.ammo_amount, true);
+                        c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
                         publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
                     }
 
@@ -280,13 +289,14 @@ public class Inventory : MonoBehaviour {
     }
 
     private void set_ammo_type(string weapon_name) {
-        switch (weapon_name) {
-            case "Raygun":
-            case "Bombs": {
+        switch (Weapon.WeaponTypeMap.Instance()[weapon_name]) {
+            case Weapon.WEAPON_TYPE.RANGE : {
                 c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
                 c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
 
-                publisher.OnInventoryEvent(c.GetAmmoType().name, INVENTORY_EVENT.SET_AMMO);
+                string ammo_name = c.GetAmmoType().GetComponent<DamageDealer>().GetDamagerName();
+
+                publisher.OnInventoryEvent(ammo_name, INVENTORY_EVENT.SET_AMMO);
                 publisher.OnInventoryEvent(c.GetAmmoAmount(), INVENTORY_EVENT.UPDATE_AMMO_AMOUNT);
             }
             break;
@@ -310,12 +320,14 @@ public class Inventory : MonoBehaviour {
     }
 
     public void update_equipped() {
-        if ((desired_equipped != "" && equipped == null) || (desired_equipped != "" && equipped != null && desired_equipped != equipped.name)) {
+        if ((desired_equipped != "" && equipped == null) || (desired_equipped != "" && equipped != null &&
+            desired_equipped != equipped.GetComponent<BasicWeapon>().GetWeaponName())) 
+        {
             if (equipped != null) {
                 Destroy(equipped);
             }
 
-            equipped = f.SpawnEquipped(desired_equipped, transform, "RightArm");
+            equipped = f.SpawnEquipped(desired_equipped, transform, Weapon.PlayerSpawnOnBody.DEFAULT_SPAWN);
 
             tps.current_weapon_range = equipped.GetComponent<BasicWeapon>().range;
 

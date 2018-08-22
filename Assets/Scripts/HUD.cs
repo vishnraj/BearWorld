@@ -127,15 +127,17 @@ public class HUD : MonoBehaviour {
         switch (e) {
             case INVENTORY_EVENT.EQUIP: {
                     GameObject item = (GameObject)data;
-                    if (item == null) {
+                    if (item == null || item.GetComponent<BasicWeapon>() == null) {
                         // this equip event is not relevant to this component
                         return;
                     }
 
-                    equipped_status.gameObject.GetComponent<Text>().text = item.name + " equipped";
+                    string item_name = item.GetComponent<BasicWeapon>().GetWeaponName();
+
+                    equipped_status.gameObject.GetComponent<Text>().text = item_name + " equipped";
                     equipped_status.gameObject.GetComponent<Text>().color = purple;
 
-                    Sprite s = Resources.Load<Sprite>("Sprites/" + item.name);
+                    Sprite s = Resources.Load<Sprite>("Sprites/" + item_name);
                     if (s != null) {
                         equipped_icon.gameObject.GetComponent<Image>().sprite = s;
                     } else {

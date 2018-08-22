@@ -3,16 +3,49 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Weapon {
-    public abstract class WeaponInfo { }
     public enum WEAPON_TYPE { RANGE, MELEE }
+
+    static class WeaponNames {
+        public const string SWORD = "Sword";
+
+        public const string RAYGUN = "Raygun";
+        public const string BOMBS = "Bombs";
+    }
+
+    static class DamagerNames {
+        public const string BLADE = "Blade";
+
+        public const string LASER_SHOT = "RaygunLaserShot";
+        public const string BOMB = "Bomb";
+    }
+
+    class WeaponTypeMap {
+        static Dictionary<string, WEAPON_TYPE> weapon_name_to_type = null;
+
+        public static Dictionary<string, WEAPON_TYPE> Instance() {
+            if (weapon_name_to_type == null) {
+                weapon_name_to_type = new Dictionary<string, WEAPON_TYPE>();
+
+                weapon_name_to_type[WeaponNames.RAYGUN] = WEAPON_TYPE.RANGE;
+                weapon_name_to_type[WeaponNames.BOMBS] = WEAPON_TYPE.RANGE;
+                weapon_name_to_type[WeaponNames.SWORD] = WEAPON_TYPE.MELEE;
+            }
+
+            return weapon_name_to_type;
+        }
+    }
+
+    static class PlayerSpawnOnBody {
+        public const string DEFAULT_SPAWN = "RightArm";
+    }
 
     class WeaponFactory {
         // (kind of a) Factory function
         public GameObject SpawnEquipped(string desired_equipped, Transform character, string body_part = "") {
             GameObject equipped = null;
             switch (desired_equipped) {
-                case "Raygun":
-                case "Sword": {
+                case WeaponNames.RAYGUN :
+                case WeaponNames.SWORD : {
                     if (body_part == "") {
                         Debug.LogError("We require a body part to equip weapon of type: " + desired_equipped);
                     }
@@ -26,7 +59,7 @@ namespace Weapon {
                     }
                 }
                 break;
-                case "Bombs": {
+                case WeaponNames.BOMBS : {
                     if (body_part != "") {
                         Transform part = character.Find(body_part);
                         equipped = Object.Instantiate(Resources.Load("Prefabs/" + desired_equipped), part.position, part.rotation) as GameObject;
@@ -48,14 +81,6 @@ namespace Weapon {
             }
 
             if (equipped != null) {
-                // Some processing to get rid of clone or similar
-                // words that show up in the name
-                if (equipped.name.Contains(" ")) {
-                    equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf(" "));
-                } else if (equipped.name.Contains("(")) {
-                    equipped.name = equipped.name.Substring(0, equipped.name.LastIndexOf("("));
-                }
-
                 equipped.GetComponent<BasicWeapon>().Init();
             }
 
@@ -69,9 +94,10 @@ public abstract class BasicWeapon : MonoBehaviour {
 
     protected Weapon.WEAPON_TYPE type;
     protected BasicCharacter c;
+    protected string weapon_name = "";
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -95,5 +121,7 @@ public abstract class BasicWeapon : MonoBehaviour {
     }
 
     public Weapon.WEAPON_TYPE GetWeaponType() { return type; }
+    public string GetWeaponName() { return weapon_name; }
+
     public void SetCharacter(BasicCharacter character) { c = character; }
 }

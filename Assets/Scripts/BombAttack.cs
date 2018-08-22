@@ -14,6 +14,8 @@ public class BombAttack : BasicWeapon {
 
     private void Awake() {
         type = Weapon.WEAPON_TYPE.RANGE;
+        weapon_name = Weapon.WeaponNames.BOMBS;
+
         s = new Searching();
     }
 
@@ -56,5 +58,12 @@ public class BombAttack : BasicWeapon {
 
     public override void EndAttack() {
         dropped = false;
+    }
+
+    public override void Init() {
+        base.Init();
+
+        type = Weapon.WEAPON_TYPE.RANGE;
+        weapon_name = Weapon.WeaponNames.BOMBS;
     }
 }

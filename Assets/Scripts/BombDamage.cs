@@ -2,33 +2,32 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BombDamage : MonoBehaviour {
-    // As far as parent class for this, when
-    // we start having more bombs, this will be
-    // typed a Damage Emitter vs Damage Dealer
-
+public class BombDamage : DamageDealer {
     public float lifetime;
     public float range;
     public float damage;
 
     float start;
     bool expired = false;
-    string origin_tag;
 
 	// Use this for initialization
 	void Start () {
         start = Time.time;
 	}
-	
-	// Update is called once per frame
-	void Update () {
+
+    private void Awake() {
+        damager_name = Weapon.DamagerNames.BOMB;
+    }
+
+    // Update is called once per frame
+    void Update () {
         if (!expired && Time.time - start >= lifetime) {
             expired = true;
             Explode();
         }		
 	}
 
-    void DealDamage() {
+    void DamageEmission() {
         Collider[] objectsInRange = Physics.OverlapSphere(transform.position, range);
         foreach (Collider col in objectsInRange) {
             BoxCollider b_col = col as BoxCollider; // as of now, character game objects
@@ -52,15 +51,13 @@ public class BombDamage : MonoBehaviour {
     void Explode() {
         ParticleSystem exp = GetComponent<ParticleSystem>();
         exp.Play();
-        DealDamage();
+        DamageEmission();
         Destroy(gameObject, exp.main.duration);
     }
 
-    public void SetOriginTag(string t) {
-        origin_tag = t;
-    }
+    public override void Init() {
+        base.Init();
 
-    public string GetOriginTag() {
-        return origin_tag;
+        damager_name = Weapon.DamagerNames.BOMB;
     }
 }

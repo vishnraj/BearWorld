@@ -33,6 +33,10 @@ public class BasicCharacter : MonoBehaviour {
     public float GetAmmoAmount() { return current_ammo_amount; }
     public void DecrementAmmoAmount() { --current_ammo_amount; }
 
+    // some of the below functions should actually get moved out to a derived
+    // player class - it's unlikely that enemies will have use for it
+    // and enemies are using this class as well
+
     public void SetTarget(GameObject _target) { target = _target; }
     public GameObject GetTarget() { return target;  }
 

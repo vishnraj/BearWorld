@@ -4,9 +4,10 @@ using UnityEngine;
 
 public abstract class DamageDealer : MonoBehaviour {
     protected string origin_tag = "";
+    protected string damager_name = "";
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -24,4 +25,8 @@ public abstract class DamageDealer : MonoBehaviour {
     public string GetOriginTag() {
         return origin_tag;
     }
+
+    public string GetDamagerName() { return damager_name; }
+
+    public virtual void Init() { /* do nothing by default */ }
 }
