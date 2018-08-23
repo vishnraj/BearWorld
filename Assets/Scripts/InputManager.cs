@@ -47,9 +47,9 @@ public class InputManager : MonoBehaviour {
                 is_paused = true;
                 publisher.OnInputEvent(InputEvents.INPUT_EVENT.PAUSE);
             } else {
+                publisher.OnInputEvent(InputEvents.INPUT_EVENT.UNPAUSE); // all actions carried out first, then unpaused
                 Time.timeScale = 1; // unpause
                 is_paused = false;
-                publisher.OnInputEvent(InputEvents.INPUT_EVENT.UNPAUSE);
             }
         }
 	}

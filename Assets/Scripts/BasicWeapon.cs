@@ -19,7 +19,7 @@ namespace Weapon {
         public const string BOMB = "Bomb";
     }
 
-    class WeaponTypeMap {
+    static class WeaponTypeMap {
         static Dictionary<string, WEAPON_TYPE> weapon_name_to_type = null;
 
         public static Dictionary<string, WEAPON_TYPE> Instance() {

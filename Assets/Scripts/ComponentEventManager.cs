@@ -108,23 +108,15 @@ namespace EnemyHealthEvents {
 }
 
 namespace PlayerAttackEvents {
-    public enum PLAYER_ATTACK_EVENT { JUMP_ATTACK };
-
-    public class PlayerAttackData {
-        public Vector3 jump_destination = Vector3.zero;
-
-        public PlayerAttackData(Vector3 _jump_destination) {
-            jump_destination = _jump_destination;
-        }
-    }
+    public enum PLAYER_ATTACK_EVENT { SPECIAL_ATTACK_START, SPECIAL_ATTACK_END };
 
     public class PlayerAttackControllerPublisher {
-        public delegate void PlayerAttackControllerHandler(PlayerAttackData data, PLAYER_ATTACK_EVENT e);
+        public delegate void PlayerAttackControllerHandler(string weapon_name, PLAYER_ATTACK_EVENT e);
         public event PlayerAttackControllerHandler PlayerAttackEvent;
 
-        public void OnPlayerAttackEvent(PlayerAttackData data, PLAYER_ATTACK_EVENT e) {
+        public void OnPlayerAttackEvent(string weapon_name, PLAYER_ATTACK_EVENT e) {
             if (PlayerAttackEvent != null) {
-                PlayerAttackEvent(data, e);
+                PlayerAttackEvent(weapon_name, e);
             }
             else {
                 Debug.Log("NOOP");

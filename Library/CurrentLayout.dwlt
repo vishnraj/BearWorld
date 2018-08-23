@@ -412,7 +412,7 @@ MonoBehaviour:
     height: 424
   m_TreeViewState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: fa070000
+    m_SelectedIDs: bc060000
     m_LastClickedID: 0
     m_ExpandedIDs: 1afcffff00000000
     m_RenameOverlay:
@@ -496,7 +496,7 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: 0.16713278, y: 0.6637701, z: -0.15577304, w: 0.7121873}
     speed: 2
-    m_Value: {x: 0.16713278, y: 0.6637701, z: -0.15577304, w: 0.7121873}
+    m_Value: {x: 0.16713277, y: 0.66377, z: -0.15577303, w: 0.71218723}
   m_Size:
     m_Target: 55.775047
     speed: 2
@@ -641,7 +641,7 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
-    m_ScrollPosition: {x: 0, y: 60}
+    m_ScrollPosition: {x: 0, y: 416}
     m_GridSize: 55
   m_DirectoriesAreaWidth: 110
 --- !u!114 &18

@@ -315,6 +315,9 @@ public class Inventory : MonoBehaviour {
             desired_equipped = "";
             c.SetAmmoAmount(0);
             c.SetAmmoType(null);
+
+            UnequipItem();
+
             set_equipped_none();
         }
     }
@@ -345,14 +348,15 @@ public class Inventory : MonoBehaviour {
     }
 
     void ActivateItem() {
-        pac.weapon = equipped.GetComponent<BasicWeapon>();
-        pac.weapon.SetCharacter(c);
-        pac.weapon.enabled = true;
-        pac.enabled = true;
+        pac.EquipWeapon(equipped.GetComponent<BasicWeapon>(), c);
+        pac.EnableController();
+    }
+
+    void UnequipItem() {
+        pac.UnequipWeapon();
     }
 
     void DeactivateItem() {
-        pac.weapon.enabled = false;
-        pac.enabled = false;
+        pac.DisableController();
     }
 }
