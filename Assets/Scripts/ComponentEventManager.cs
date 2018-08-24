@@ -108,7 +108,7 @@ namespace EnemyHealthEvents {
 }
 
 namespace PlayerAttackEvents {
-    public enum PLAYER_ATTACK_EVENT { SPECIAL_ATTACK_START, SPECIAL_ATTACK_END };
+    public enum PLAYER_ATTACK_EVENT { SPECIAL_ATTACK_START, SPECIAL_ATTACK_END, SPECIAL_ATTACK_TERMINATE };
 
     public class PlayerAttackControllerPublisher {
         public delegate void PlayerAttackControllerHandler(string weapon_name, PLAYER_ATTACK_EVENT e);
@@ -125,6 +125,23 @@ namespace PlayerAttackEvents {
     }
 }
 
+namespace MovementEvents {
+    public enum MOVEMENT_EVENT { SPECIAL_ATTACK_END }
+
+    public class MovementEventPublisher {
+        public delegate void MovementEventHandler(MOVEMENT_EVENT e);
+        public event MovementEventHandler MovementEvent;
+
+        public void OnMovementEvent(MOVEMENT_EVENT e) {
+            if (MovementEvent != null) {
+                MovementEvent(e);
+            } else {
+                Debug.Log("NOOP");
+            }
+        }
+    }
+}
+
 public class ComponentEventManager : MonoBehaviour {
     public InventoryEvents.InventoryPublisher inventory_publisher;
     public TargetingEvents.TargetingPublisher targeting_publisher;
@@ -132,6 +149,7 @@ public class ComponentEventManager : MonoBehaviour {
     public EnemyHealthEvents.EnemyHealthEventPublisher enemy_health_publisher;
     public AimingEvents.AimingPublisher aiming_publisher;
     public PlayerAttackEvents.PlayerAttackControllerPublisher attacks_publisher;
+    public MovementEvents.MovementEventPublisher movement_publisher;
 
     // Use this for initialization
     void Start () {
@@ -145,6 +163,7 @@ public class ComponentEventManager : MonoBehaviour {
         enemy_health_publisher = new EnemyHealthEvents.EnemyHealthEventPublisher();
         aiming_publisher = new AimingEvents.AimingPublisher();
         attacks_publisher = new PlayerAttackEvents.PlayerAttackControllerPublisher();
+        movement_publisher = new MovementEvents.MovementEventPublisher();
     }
 	
 	// Update is called once per frame

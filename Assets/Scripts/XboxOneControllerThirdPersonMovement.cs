@@ -5,6 +5,7 @@ using InputEvents;
 using TargetingEvents;
 using AimingEvents;
 using PlayerAttackEvents;
+using MovementEvents;
 
 public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 {
@@ -18,9 +19,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     bool grounded = false;
     bool in_special_attack = false;
 
+    // margin for distance to enemy - needed in some calculations
+    float to_target_gap_threshold = 5f;
+
     Rigidbody rb;
     Rotation rt;
     GameObject current_target; // this is received from targeting system - it tells us where to point if locked_on
+
+    MovementEventPublisher publisher;
 
     delegate void DoUpdate();
     DoUpdate update_non_xz_user_in_non_fixed;
@@ -45,6 +51,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void Start()
     {
+        publisher = event_manager.GetComponent<ComponentEventManager>().movement_publisher;
+
         event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventsCallback;
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
@@ -88,19 +96,17 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                     if (!in_special_attack && MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
                         update = MovementOverrideMap.Instance(this)[weapon_name];
                         in_special_attack = true;
-
-                        Debug.Log("Weapon override start for: " + weapon_name);
                     }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_END: {
+                    in_special_attack = false;
+                }
+                break;
+            case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_TERMINATE: {
                     if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
-                        // possibly something will be needed - however, the actually switch
-                        // back to default update will be handled by the override function -
-                        // once the override movement is complete, it then sets the update
-                        // back to default and will unset the in_special_attack flag
-
-                        Debug.Log("Weapon override end for: " + weapon_name);
+                        in_special_attack = false;
+                        update = DefaultUpdate;
                     }
                 }
                 break;
@@ -188,31 +194,22 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void SwordTargetingUpdate() {
-        if (Input.GetAxis("LeftJoystickY") != 0 || Input.GetAxis("LeftJoystickX") != 0) {
-            update_xz_user_in_non_fixed();
-
-            update_xz_user_in_fixed = XZUserInFixedUpdate;
-        }
-        else {
-            update_xz_user_in_fixed = DefaultFixedUpdate;
+        if (!in_special_attack) {
+            update = DefaultUpdate;
+            return;
         }
 
-        if (Input.GetButton("A") && grounded) {
-            update_non_xz_user_in_fixed = JumpingFixedUpdate; // we will likely change this behavior
-                                                              // in the case of a sword attack, we will
-                                                              // launch towards the enemy
+        if (Mathf.Abs(Vector3.Magnitude(transform.position - current_target.transform.position)) <= to_target_gap_threshold) {
+            publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
+            return;
         }
-        else {
-            update_non_xz_user_in_fixed = DefaultFixedUpdate;
-        }
+
+        update_xz_user_in_non_fixed();
+
+        update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
+        update_non_xz_user_in_fixed = DefaultFixedUpdate;
 
         update_non_xz_user_in_non_fixed();
-
-        // placeholder for now, but there will be additional checks,
-        // regarding the above movement, which will need to take place
-        // before we can switch back to default update and turn off the flag
-        update = DefaultUpdate;
-        in_special_attack = false;
     }
 
     void DefaultFixedUpdate() {
@@ -225,6 +222,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void JumpingFixedUpdate() {
         rb.AddForce(transform.up * jump_power);
+    }
+
+    void FlyTowardsTargetFixedUpdate() {
+        if (in_special_attack) {
+            rb.AddRelativeForce(Vector3.forward * movement_speed, ForceMode.Force);
+        }
     }
 
     void DefaultNonFixedUpdate() {

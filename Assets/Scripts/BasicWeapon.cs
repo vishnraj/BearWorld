@@ -26,9 +26,10 @@ namespace Weapon {
             if (weapon_name_to_type == null) {
                 weapon_name_to_type = new Dictionary<string, WEAPON_TYPE>();
 
+                weapon_name_to_type[WeaponNames.SWORD] = WEAPON_TYPE.MELEE;
+
                 weapon_name_to_type[WeaponNames.RAYGUN] = WEAPON_TYPE.RANGE;
                 weapon_name_to_type[WeaponNames.BOMBS] = WEAPON_TYPE.RANGE;
-                weapon_name_to_type[WeaponNames.SWORD] = WEAPON_TYPE.MELEE;
             }
 
             return weapon_name_to_type;
