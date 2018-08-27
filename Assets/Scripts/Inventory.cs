@@ -49,7 +49,7 @@ public class Inventory : MonoBehaviour {
     InventoryPublisher publisher;
     PlayerAttackController pac;
     ThirdPersonTargetingSystem tps;
-    BasicCharacter c;
+    Player c;
     Weapon.WeaponFactory f;
 
     delegate void DoUpdate();
@@ -62,7 +62,7 @@ public class Inventory : MonoBehaviour {
 
         tps = GetComponent<ThirdPersonTargetingSystem>();
         pac = GetComponent<PlayerAttackController>();
-        c = GetComponent<BasicCharacter>();
+        c = GetComponent<Player>();
         f = new Weapon.WeaponFactory();
 
         desired_equipped_index = current_inventory_index = -1;
@@ -282,9 +282,9 @@ public class Inventory : MonoBehaviour {
             if (inventory.Count != 0 && current_inventory_index < inventory.Count) {
                 desired_equipped = inventory[current_inventory_index];
                 desired_equipped_index = current_inventory_index;
-            }
 
-            set_ammo_type(desired_equipped);
+                set_ammo_type(desired_equipped);
+            }
         }
     }
 

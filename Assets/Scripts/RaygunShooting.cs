@@ -28,8 +28,11 @@ public class RaygunShooting : BasicWeapon
     // Update is called once per frame
     void Update()
     {
-        if (c.InLockOn()) {
-            target_position = c.GetTarget().transform.position;
+        if (c is Player) {
+            Player p = (Player)c;
+            if (p.InLockOn()) {
+                target_position = c.GetTarget().transform.position;
+            }
         }
     }
 
@@ -48,38 +51,50 @@ public class RaygunShooting : BasicWeapon
         s.enabled = true;
     }
 
+    void PlayerShooting() {
+        Player p = (Player)c;
+
+        if (p.InLockOn()) {
+            RaycastHit hit;
+            Vector3 to_target = target_position - transform.position;
+
+            // The two layers that are basically important for the game, regarding what can be hit and
+            // what can't be (enemies, players and other objects in the scene that are collidable)
+            int layers = (1 << LayerMask.NameToLayer("Enemy_Layer")) | (1 << LayerMask.NameToLayer("Current_Realm"));
+
+            if (Physics.Raycast(transform.position, to_target, out hit, range, layers) && hit.collider.gameObject.GetComponent<BasicHealth>() != null) {
+                GameObject hit_obj = hit.collider.gameObject;
+
+                // effectively no friendly fire
+                if (c.tag != hit_obj.tag) {
+                    GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
+                    shot.GetComponent<SphereCollider>().enabled = false; // we don't want a trigger
+                    shot.transform.position = transform.position + to_target * frac_to_target;
+
+                    RaygunShot s = shot.GetComponent<RaygunShot>();
+                    hit_obj.GetComponent<BasicHealth>().Damage(s.damage);
+                    c.DecrementAmmoAmount();
+
+                    Destroy(shot, lock_on_shot_delay);
+                }
+            }
+            else {
+                DefaultShooting(); // simulate an actual gun fire; even if it can't hit, it still would fly in that general direction
+            }
+        }
+        else {
+            DefaultShooting(); // simulate an actual gun fire; even if it can't hit, it still would fly in that general direction
+        }
+    }
+
     IEnumerator Fire()
     {
         while (true)
         {
             if (c.GetAmmoAmount() != 0 && !currently_firing)
             {
-                if (c.InLockOn()) {
-                    RaycastHit hit;
-                    Vector3 to_target = target_position - transform.position;
-
-                    // The two layers that are basically important for the game, regarding what can be hit and
-                    // what can't be (enemies, players and other objects in the scene that are collidable)
-                    int layers = (1 << LayerMask.NameToLayer("Enemy_Layer")) | (1 << LayerMask.NameToLayer("Current_Realm"));
-
-                    if (Physics.Raycast(transform.position, to_target, out hit, range, layers) && hit.collider.gameObject.GetComponent<BasicHealth>() != null) {
-                        GameObject hit_obj = hit.collider.gameObject;
-
-                        // effectively no friendly fire
-                        if (c.tag != hit_obj.tag) {
-                            GameObject shot = Instantiate(c.GetAmmoType()) as GameObject;
-                            shot.GetComponent<SphereCollider>().enabled = false; // we don't want a trigger
-                            shot.transform.position = transform.position + to_target * frac_to_target;
-
-                            RaygunShot s = shot.GetComponent<RaygunShot>();
-                            hit_obj.GetComponent<BasicHealth>().Damage(s.damage);
-                            c.DecrementAmmoAmount();
-
-                            Destroy(shot, lock_on_shot_delay);
-                        }
-                    } else {
-                        DefaultShooting(); // simulate an actual gun fire; even if it can't hit, it still would fly in that general direction
-                    }
+                if (c is Player) {
+                    PlayerShooting();           
                 } else {
                     DefaultShooting();
                 }

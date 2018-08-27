@@ -21,12 +21,12 @@ public class SwordAttack : BasicWeapon {
 
     public override void Attack() {
         blade.enabled = true;
-        transform.Rotate(0, 0, 90);
+        transform.Rotate(0, 0, 135);
     }
 
     public override void EndAttack() {
         blade.enabled = false;
-        transform.Rotate(0, 0, -90);
+        transform.Rotate(0, 0, -135);
     }
 
     public override void Init() {
@@ -40,7 +40,6 @@ public class SwordAttack : BasicWeapon {
         pos += transform.up * .2f;
         transform.position = pos;
 
-        transform.Rotate(0, 75, 0);
-        transform.Rotate(-90, 0, 0);
+        transform.Rotate(-55, 90, 0);
     }
 }

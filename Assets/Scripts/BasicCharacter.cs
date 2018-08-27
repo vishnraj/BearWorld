@@ -9,15 +9,14 @@ public class BasicCharacter : MonoBehaviour {
     // to them, this keeps track of overall
     // important state information for the character)
 
-    GameObject current_ammo_type = null;
-    float current_ammo_amount = 0;
+    protected GameObject current_ammo_type = null;
+    protected float current_ammo_amount = 0;
 
-    bool in_lock_on = false;
-    GameObject target;
-    Vector3 aiming_direction;
+    protected GameObject target;
+    protected Vector3 aiming_direction;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -33,16 +32,9 @@ public class BasicCharacter : MonoBehaviour {
     public float GetAmmoAmount() { return current_ammo_amount; }
     public void DecrementAmmoAmount() { --current_ammo_amount; }
 
-    // some of the below functions should actually get moved out to a derived
-    // player class - it's unlikely that enemies will have use for it
-    // and enemies are using this class as well
-
     public void SetTarget(GameObject _target) { target = _target; }
-    public GameObject GetTarget() { return target;  }
+    public GameObject GetTarget() { return target; }
 
     public void SetAimingDirection(Vector3 direction) { aiming_direction = direction; }
     public Vector3 GetAimingDirection() { return aiming_direction; }
-
-    public void SetInLockOn(bool locked_on) { in_lock_on = locked_on; }
-    public bool InLockOn() { return in_lock_on; }
 }

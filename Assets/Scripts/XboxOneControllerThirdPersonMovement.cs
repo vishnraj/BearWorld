@@ -13,14 +13,25 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     public GameObject event_manager;
 
     float movement_speed = 100f;
-    float jump_power = 600f;
+    float jump_power = 1000f;
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
-    bool grounded = false;
-    bool in_special_attack = false;
+    bool grounded = true;
 
     // margin for distance to enemy - needed in some calculations
-    float to_target_gap_threshold = 5f;
+    float to_target_gap_threshold = 1.5f;
+    float special_attack_start = 0.0f;
+    bool in_special_attack = false;
+    Vector3 snapped_start_pos_special_attack = Vector3.zero;
+
+    // specific to special attack bools
+    static class SpecialAttackFlags {
+        static public bool sword_jump_attack = false;
+
+        static public void SetAllFlagsOff() {
+            sword_jump_attack = false;
+        }
+    }
 
     Rigidbody rb;
     Rotation rt;
@@ -34,6 +45,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     DoUpdate update_non_xz_user_in_fixed;
     DoUpdate update_xz_user_in_fixed;
     DoUpdate update;
+    DoUpdate fixed_update;
 
     static class MovementOverrideMap {
         static Dictionary<string, DoUpdate> weapon_name_to_override = null;
@@ -58,13 +70,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         event_manager.GetComponent<ComponentEventManager>().aiming_publisher.AimingEvent += AimingEventCallback;
         event_manager.GetComponent<ComponentEventManager>().attacks_publisher.PlayerAttackEvent += PlayerAttackEventsCallback;
 
-        update_non_xz_user_in_non_fixed = DefaultNonFixedUpdate;
+        update_non_xz_user_in_non_fixed = DoNothingUpdate;
         update_xz_user_in_non_fixed = UnequippedMoveUpdate;
 
-        update_non_xz_user_in_fixed = DefaultFixedUpdate;
-        update_xz_user_in_fixed = DefaultFixedUpdate;
+        update_non_xz_user_in_fixed = DoNothingFixedUpdate;
+        update_xz_user_in_fixed = DoNothingFixedUpdate;
 
         update = DefaultUpdate;
+        fixed_update = DefaultFixedUpdate;
     }
 
     void Awake()
@@ -95,18 +108,21 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_START: {
                     if (!in_special_attack && MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
                         update = MovementOverrideMap.Instance(this)[weapon_name];
+                        special_attack_start = Time.time;
+                        snapped_start_pos_special_attack = new Vector3(transform.position.x, transform.position.y, transform.position.z);
                         in_special_attack = true;
                     }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_END: {
-                    in_special_attack = false;
+                    if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
+                        in_special_attack = false; // treat this different as a given special attack will choose its clean up process
+                    }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_TERMINATE: {
                     if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
-                        in_special_attack = false;
-                        update = DefaultUpdate;
+                        UnsetSpecialAttack(); // terminates don't care about the special attack clean up process, just kill whatever is happening
                     }
                 }
                 break;
@@ -119,7 +135,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         switch(e) {
             case TARGETING_EVENT.LOCK_ON: {
                     update_non_xz_user_in_non_fixed = TargetingUpdate; // this is because happens in all cases and is based on target now
-                    update_xz_user_in_non_fixed = DefaultNonFixedUpdate; // moving doesn't influence the rotations or movement direction now
+                    update_xz_user_in_non_fixed = DoNothingUpdate; // moving doesn't influence the rotations or movement direction now
                     current_target = target;
                 }
                 break;
@@ -142,7 +158,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                 }
                 break;
             case AIMING_EVENT.AIM_OFF:
-                update_non_xz_user_in_non_fixed = DefaultNonFixedUpdate;
+                update_non_xz_user_in_non_fixed = DoNothingUpdate;
                 update_xz_user_in_non_fixed = UnequippedMoveUpdate;
                 break;
             default:
@@ -157,19 +173,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        update_xz_user_in_fixed();
-        update_non_xz_user_in_fixed();
+        fixed_update();
     }
 
     void OnCollisionEnter(Collision collide) {
-        if (collide.collider.tag == "Ground") {
+        if (collide.gameObject.tag == "Ground") {
             grounded = true;
-        }
-    }
-
-    void OnCollisionExit(Collision collide) {
-        if (collide.collider.tag == "Ground") {
-            grounded = false;
         }
     }
 
@@ -180,39 +189,47 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             update_xz_user_in_fixed = XZUserInFixedUpdate;
         }
         else {
-            update_xz_user_in_fixed = DefaultFixedUpdate;
+            update_xz_user_in_fixed = DoNothingFixedUpdate;
         }
 
         if (Input.GetButton("A") && grounded) {
             update_non_xz_user_in_fixed = JumpingFixedUpdate;
         }
         else {
-            update_non_xz_user_in_fixed = DefaultFixedUpdate;
+            update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
-
-        update_non_xz_user_in_non_fixed();
-    }
-
-    void SwordTargetingUpdate() {
-        if (!in_special_attack) {
-            update = DefaultUpdate;
-            return;
-        }
-
-        if (Mathf.Abs(Vector3.Magnitude(transform.position - current_target.transform.position)) <= to_target_gap_threshold) {
-            publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
-            return;
-        }
-
-        update_xz_user_in_non_fixed();
-
-        update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
-        update_non_xz_user_in_fixed = DefaultFixedUpdate;
 
         update_non_xz_user_in_non_fixed();
     }
 
     void DefaultFixedUpdate() {
+        update_non_xz_user_in_fixed();
+        update_xz_user_in_fixed();
+    }
+
+    void SwordTargetingUpdate() {
+        if (!in_special_attack) {
+            SpecialAttackFlags.SetAllFlagsOff();
+            update = DefaultUpdate;
+            fixed_update = DefaultFixedUpdate;
+            return;
+        }
+
+        float to_target_y_threshold = 1.0f;
+        if (!grounded && !SpecialAttackFlags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
+            SpecialAttackFlags.sword_jump_attack = true; // matters that it gets set in the first update
+            fixed_update = JumpingTowardsTargetFixedUpdate;
+        }
+
+        if (!SpecialAttackFlags.sword_jump_attack) {
+            update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
+            update_non_xz_user_in_fixed = DoNothingFixedUpdate;
+        }
+
+        update_non_xz_user_in_non_fixed();
+    }
+
+    void DoNothingFixedUpdate() {
         // NOOP
     }
 
@@ -222,15 +239,44 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void JumpingFixedUpdate() {
         rb.AddForce(transform.up * jump_power);
+        grounded = false;
     }
 
     void FlyTowardsTargetFixedUpdate() {
         if (in_special_attack) {
-            rb.AddRelativeForce(Vector3.forward * movement_speed, ForceMode.Force);
+            Vector2 player_xz_pos = new Vector2(transform.position.x, transform.position.z);
+            Vector2 xz_target_pos = new Vector2(current_target.transform.position.x, current_target.transform.position.z);
+
+            if (Mathf.Abs(Vector3.Magnitude(xz_target_pos - player_xz_pos)) <= to_target_gap_threshold) {
+                publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
+                return;
+            }
+
+            float sword_attack_speed = 200f;
+            // the relative force will take care of moving towards the target by passing foward
+            rb.AddRelativeForce(Vector3.forward * sword_attack_speed, ForceMode.Force);
         }
     }
 
-    void DefaultNonFixedUpdate() {
+    void JumpingTowardsTargetFixedUpdate() {
+        if (in_special_attack) {
+            if (Mathf.Abs(Vector3.Magnitude(current_target.transform.position - transform.position)) <= to_target_gap_threshold) {
+                publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
+                return;
+            }
+
+            float time_elapsed = Time.time - special_attack_start;
+            float percent_time = time_elapsed / 1.0f;
+
+            transform.position = Vector3.Lerp(snapped_start_pos_special_attack, current_target.transform.position, percent_time);
+        }
+    }
+
+    private float CalculateJumpSpeed(float jumpHeight, float gravity) {
+        return Mathf.Sqrt(2 * jumpHeight * gravity);
+    }
+
+    void DoNothingUpdate() {
         // NOOP
     }
 
@@ -299,5 +345,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
         float theta_final = CalculateThirdPersonZXRotation();
         movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
+    }
+
+    void UnsetSpecialAttack() {
+        in_special_attack = false;
+        SpecialAttackFlags.SetAllFlagsOff();
+        update = DefaultUpdate;
+        fixed_update = DefaultFixedUpdate;
     }
 }

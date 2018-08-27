@@ -35,7 +35,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     TargetingPublisher publisher;
     CloseCompare compare_distances;
     Rotation rt;
-    BasicCharacter c;
+    Player c;
 
     delegate void DoUpdate();
     DoUpdate update;
@@ -49,7 +49,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         sorted_by_chosen_direction = new SortedList(compare_distances);
 
         rt = new Rotation();
-        c = GetComponent<BasicCharacter>();
+        c = GetComponent<Player>();
 
         publisher = event_manager.GetComponent<ComponentEventManager>().targeting_publisher;
 
