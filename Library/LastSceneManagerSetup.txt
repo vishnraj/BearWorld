@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/EnemyDestructTestScene.unity
+- path: Assets/TargetingTestScene.unity
   isLoaded: 1
   isActive: 1

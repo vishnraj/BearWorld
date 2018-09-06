@@ -9,7 +9,6 @@ public class ItemUI : MonoBehaviour {
     public GameObject none;
     public Sprite selection;
 
-    public int max_items;
     public float offset_x;
 
     bool switching = false;
@@ -137,7 +136,7 @@ public class ItemUI : MonoBehaviour {
             set_item_menu_hud(i, num_items);
             ++num_items;
         }
-        for (; num_items < max_items; ++num_items) {
+        for (; num_items < inventory_system.max_items; ++num_items) {
             set_item_menu_hud(none.name, num_items);
         }
 

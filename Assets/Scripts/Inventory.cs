@@ -35,7 +35,6 @@ namespace Items {
 // about these items 
 public class Inventory : MonoBehaviour {
     public int max_items;
-    public float offset_x;
     public string desired_equipped;
     public GameObject equipped = null;
     public GameObject event_manager;

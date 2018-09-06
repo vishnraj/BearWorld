@@ -100,12 +100,12 @@ public class PlayerAttackController : MonoBehaviour {
     }
 
     bool CanSpecialSwordAttack() {
-        RaycastHit hit;
+        //RaycastHit hit;
 
-        Vector3 target_position = character.GetTarget().transform.position;
-        Vector3 to_target = target_position - transform.position;
+        //Vector3 target_position = character.GetTarget().transform.position;
+        //Vector3 to_target = target_position - transform.position;
 
-        int layers = (1 << LayerMask.NameToLayer("Enemy_Layer")) | (1 << LayerMask.NameToLayer("Current_Realm"));
+        //int layers = (1 << LayerMask.NameToLayer("Enemy_Layer")) | (1 << LayerMask.NameToLayer("Current_Realm"));
 
         //if (Physics.Raycast(transform.position, to_target, out hit, weapon.range, layers) && hit.collider.gameObject == character.GetTarget()) {
         //    Debug.Log("HERE .5");

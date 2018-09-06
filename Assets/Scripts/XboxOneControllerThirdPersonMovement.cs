@@ -19,7 +19,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     bool grounded = true;
 
     // margin for distance to enemy - needed in some calculations
-    float to_target_gap_threshold = 1.5f;
+    float to_target_gap_threshold = 2.0f;
     float special_attack_start = 0.0f;
     bool in_special_attack = false;
     Vector3 snapped_start_pos_special_attack = Vector3.zero;
@@ -219,6 +219,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         if (!grounded && !SpecialAttackFlags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
             SpecialAttackFlags.sword_jump_attack = true; // matters that it gets set in the first update
             fixed_update = JumpingTowardsTargetFixedUpdate;
+            // update_non_xz_user_in_fixed = JumpOverTarget;
+        } else if (SpecialAttackFlags.sword_jump_attack) {
+            // fixed_update = JumpingTowardsTargetFixedUpdate;
+            // update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
 
         if (!SpecialAttackFlags.sword_jump_attack) {
@@ -226,6 +230,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
 
+        // update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
         update_non_xz_user_in_non_fixed();
     }
 
@@ -258,6 +263,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
+    void JumpOverTarget() {
+
+    }
+
     void JumpingTowardsTargetFixedUpdate() {
         if (in_special_attack) {
             if (Mathf.Abs(Vector3.Magnitude(current_target.transform.position - transform.position)) <= to_target_gap_threshold) {
@@ -268,7 +277,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             float time_elapsed = Time.time - special_attack_start;
             float percent_time = time_elapsed / 1.0f;
 
-            transform.position = Vector3.Lerp(snapped_start_pos_special_attack, current_target.transform.position, percent_time);
+            Vector3 dest = new Vector3(current_target.transform.position.x, current_target.transform.position.y + 1, current_target.transform.position.z);
+            transform.position = Vector3.Slerp(snapped_start_pos_special_attack, dest, percent_time);
         }
     }
 
