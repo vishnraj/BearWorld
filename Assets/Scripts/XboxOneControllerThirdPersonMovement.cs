@@ -21,9 +21,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     // margin for distance to enemy - needed in some calculations
     float to_target_gap_threshold = 2.0f;
-    float special_attack_start = 0.0f;
     bool in_special_attack = false;
-    Vector3 snapped_start_pos_special_attack = Vector3.zero;
 
     // specific to special attack bools
     static class SpecialAttackFlags {
@@ -110,8 +108,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_START: {
                     if (!in_special_attack && MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
                         update = MovementOverrideMap.Instance(this)[weapon_name];
-                        special_attack_start = Time.time;
-                        snapped_start_pos_special_attack = new Vector3(transform.position.x, transform.position.y, transform.position.z);
                         in_special_attack = true;
                     }
                 }
@@ -259,25 +255,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             // the relative force will take care of moving towards the target by passing foward
             rb.AddRelativeForce(Vector3.forward * sword_attack_speed, ForceMode.Force);
         }
-    }
-
-    void JumpingTowardsTargetFixedUpdate() {
-        if (in_special_attack) {
-            if (Vector3.Magnitude(current_target.transform.position - transform.position) <= to_target_gap_threshold) {
-                publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
-                return;
-            }
-
-            float time_elapsed = Time.time - special_attack_start;
-            float percent_time = time_elapsed / 1.0f;
-
-            Vector3 dest = new Vector3(current_target.transform.position.x, current_target.transform.position.y + 1, current_target.transform.position.z);
-            transform.position = Vector3.Slerp(snapped_start_pos_special_attack, dest, percent_time);
-        }
-    }
-
-    void JumpAbove() {
-
     }
 
     void JumpingDashFixedUpdate() {
