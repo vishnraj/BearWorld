@@ -14,6 +14,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     float movement_speed = 100f;
     float jump_power = 1000f;
+
     Vector3 desired_direction = Vector3.zero; // this is received from aiming system - if not locked on, but equipped, this determine direction
     Vector3 movement_direction = Vector3.zero;
     bool grounded = true;
@@ -27,6 +28,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     // specific to special attack bools
     static class SpecialAttackFlags {
         static public bool sword_jump_attack = false;
+        static public bool enable_sword_attack_jump = false;
 
         static public void SetAllFlagsOff() {
             sword_jump_attack = false;
@@ -218,19 +220,15 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         float to_target_y_threshold = 1.0f;
         if (!grounded && !SpecialAttackFlags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
             SpecialAttackFlags.sword_jump_attack = true; // matters that it gets set in the first update
-            fixed_update = JumpingTowardsTargetFixedUpdate;
-            // update_non_xz_user_in_fixed = JumpOverTarget;
-        } else if (SpecialAttackFlags.sword_jump_attack) {
-            // fixed_update = JumpingTowardsTargetFixedUpdate;
-            // update_non_xz_user_in_fixed = DoNothingFixedUpdate;
+            SpecialAttackFlags.enable_sword_attack_jump = true;
+            fixed_update = JumpingDashFixedUpdate; // all checks need to happen in fixed update loop, thus we switch the entire update function to perform this behavior
         }
 
         if (!SpecialAttackFlags.sword_jump_attack) {
-            update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
+            update_xz_user_in_fixed = DashTowardsTargetFixedUpdate;
             update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
 
-        // update_xz_user_in_fixed = FlyTowardsTargetFixedUpdate;
         update_non_xz_user_in_non_fixed();
     }
 
@@ -247,12 +245,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         grounded = false;
     }
 
-    void FlyTowardsTargetFixedUpdate() {
+    void DashTowardsTargetFixedUpdate() {
         if (in_special_attack) {
             Vector2 player_xz_pos = new Vector2(transform.position.x, transform.position.z);
             Vector2 xz_target_pos = new Vector2(current_target.transform.position.x, current_target.transform.position.z);
 
-            if (Mathf.Abs(Vector3.Magnitude(xz_target_pos - player_xz_pos)) <= to_target_gap_threshold) {
+            if (Vector3.Magnitude(xz_target_pos - player_xz_pos) <= to_target_gap_threshold) {
                 publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
                 return;
             }
@@ -263,13 +261,9 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
-    void JumpOverTarget() {
-
-    }
-
     void JumpingTowardsTargetFixedUpdate() {
         if (in_special_attack) {
-            if (Mathf.Abs(Vector3.Magnitude(current_target.transform.position - transform.position)) <= to_target_gap_threshold) {
+            if (Vector3.Magnitude(current_target.transform.position - transform.position) <= to_target_gap_threshold) {
                 publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_END);
                 return;
             }
@@ -282,8 +276,23 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
-    private float CalculateJumpSpeed(float jumpHeight, float gravity) {
-        return Mathf.Sqrt(2 * jumpHeight * gravity);
+    void JumpAbove() {
+
+    }
+
+    void JumpingDashFixedUpdate() {
+        if (in_special_attack) {
+            float y_diff = transform.position.y - current_target.transform.position.y;
+            float special_attack_jump_power = 105f;
+
+            // jump above the enemy
+            if (y_diff < 0f && SpecialAttackFlags.enable_sword_attack_jump) {
+                rb.AddForce(transform.up * special_attack_jump_power);
+            } else {
+                SpecialAttackFlags.enable_sword_attack_jump = false;
+                DashTowardsTargetFixedUpdate();
+            }
+        }
     }
 
     void DoNothingUpdate() {
