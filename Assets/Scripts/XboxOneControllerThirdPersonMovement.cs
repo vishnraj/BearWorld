@@ -61,6 +61,20 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
+    static class SpecialEndeMap {
+        static Dictionary<string, DoUpdate> weapon_name_to_end = null;
+
+        public static Dictionary<string, DoUpdate> Instance(XboxOneControllerThirdPersonMovement parent) {
+            if (weapon_name_to_end == null) {
+                weapon_name_to_end = new Dictionary<string, DoUpdate>();
+
+                weapon_name_to_end[Weapon.WeaponNames.SWORD] = parent.SwordTargetingUpdate;
+            }
+
+            return weapon_name_to_end;
+        }
+    }
+
     void Start()
     {
         publisher = event_manager.GetComponent<ComponentEventManager>().movement_publisher;
@@ -207,9 +221,16 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     void SwordTargetingUpdate() {
         if (!in_special_attack) {
-            SpecialAttackFlags.SetAllFlagsOff();
-            update = DefaultUpdate;
-            fixed_update = DefaultFixedUpdate;
+            if (grounded) {
+                SpecialAttackFlags.SetAllFlagsOff();
+                update = DefaultUpdate;
+                fixed_update = DefaultFixedUpdate;
+            } else {
+                // For now, we want to prevent multiple mid air jump attacks
+                // one should not be able to attack again until they have landed
+                SwordJumpAttackEnd();
+            }
+
             return;
         }
 
@@ -217,11 +238,11 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         if (!grounded && !SpecialAttackFlags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
             SpecialAttackFlags.sword_jump_attack = true; // matters that it gets set in the first update
             SpecialAttackFlags.enable_sword_attack_jump = true;
-            fixed_update = JumpingDashFixedUpdate; // all checks need to happen in fixed update loop, thus we switch the entire update function to perform this behavior
+            fixed_update = SwordJumpingDashFixedUpdate; // all checks need to happen in fixed update loop, thus we switch the entire update function to perform this behavior
         }
 
         if (!SpecialAttackFlags.sword_jump_attack) {
-            update_xz_user_in_fixed = DashTowardsTargetFixedUpdate;
+            update_xz_user_in_fixed = SwordDashTowardsTargetFixedUpdate;
             update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
 
@@ -241,7 +262,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         grounded = false;
     }
 
-    void DashTowardsTargetFixedUpdate() {
+    void SwordDashTowardsTargetFixedUpdate() {
         if (in_special_attack) {
             Vector2 player_xz_pos = new Vector2(transform.position.x, transform.position.z);
             Vector2 xz_target_pos = new Vector2(current_target.transform.position.x, current_target.transform.position.z);
@@ -257,19 +278,30 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
     }
 
-    void JumpingDashFixedUpdate() {
+    void SwordJumpingDashFixedUpdate() {
         if (in_special_attack) {
             float y_diff = transform.position.y - current_target.transform.position.y;
-            float special_attack_jump_power = 105f;
+            float special_attack_jump_power = 100f;
 
             // jump above the enemy
             if (y_diff < 0f && SpecialAttackFlags.enable_sword_attack_jump) {
                 rb.AddForce(transform.up * special_attack_jump_power);
             } else {
                 SpecialAttackFlags.enable_sword_attack_jump = false;
-                DashTowardsTargetFixedUpdate();
+                SwordDashTowardsTargetFixedUpdate();
             }
         }
+    }
+
+    void SwordJumpAttackEnd() {
+        if (grounded) {
+            SpecialAttackFlags.SetAllFlagsOff();
+            update = DefaultUpdate;
+            fixed_update = DefaultFixedUpdate;
+            return;
+        }
+
+        // We may add chain attack features in this area in the future
     }
 
     void DoNothingUpdate() {
