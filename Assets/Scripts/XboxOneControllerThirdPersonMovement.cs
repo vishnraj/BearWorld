@@ -21,7 +21,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
     // margin for distance to enemy - needed in some calculations
     float to_target_gap_threshold = 2.0f;
-    bool in_special_attack = false;
+
+    bool in_special_attack = false; // communiated from PlayerAttackController to this script - when the special attack starts
+    bool end_special_attack = false; // this is communicated from PlayerAttackController to this script - when end step of attack starts
+    bool end_step_complete = false; // also communicated by PlayerAttackController to this script - when the attack is fully complete
 
     // specific to special attack bools
     static class SpecialAttackFlags {
@@ -58,20 +61,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             }
 
             return weapon_name_to_override;
-        }
-    }
-
-    static class SpecialEndeMap {
-        static Dictionary<string, DoUpdate> weapon_name_to_end = null;
-
-        public static Dictionary<string, DoUpdate> Instance(XboxOneControllerThirdPersonMovement parent) {
-            if (weapon_name_to_end == null) {
-                weapon_name_to_end = new Dictionary<string, DoUpdate>();
-
-                weapon_name_to_end[Weapon.WeaponNames.SWORD] = parent.SwordTargetingUpdate;
-            }
-
-            return weapon_name_to_end;
         }
     }
 
@@ -128,7 +117,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_END: {
                     if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
-                        in_special_attack = false; // treat this different as a given special attack will choose its clean up process
+                        end_special_attack = true; // treat this different as a given special attack will choose its clean up process
+                                                   // and at the end of that in_special_attack will get set to false
+                    }
+                }
+                break;
+            case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_COMPLETE: {
+                    if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
+                        end_step_complete = true; // this is basically like an unlock on the special attack
                     }
                 }
                 break;
@@ -220,15 +216,18 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void SwordTargetingUpdate() {
-        if (!in_special_attack) {
-            if (grounded) {
-                SpecialAttackFlags.SetAllFlagsOff();
-                update = DefaultUpdate;
-                fixed_update = DefaultFixedUpdate;
+        if (end_special_attack) {
+            if (grounded && end_step_complete) {
+                UnsetSpecialAttack();
+
+                publisher.OnMovementEvent(MOVEMENT_EVENT.SPECIAL_ATTACK_COMPLETE);
             } else {
                 // For now, we want to prevent multiple mid air jump attacks
                 // one should not be able to attack again until they have landed
-                SwordJumpAttackEnd();
+      
+                // but we need to given control for movement back, else player may get stuck
+                DefaultUpdate();
+                fixed_update = DefaultFixedUpdate;
             }
 
             return;
@@ -263,7 +262,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void SwordDashTowardsTargetFixedUpdate() {
-        if (in_special_attack) {
+        if (in_special_attack && !end_special_attack) {
             Vector2 player_xz_pos = new Vector2(transform.position.x, transform.position.z);
             Vector2 xz_target_pos = new Vector2(current_target.transform.position.x, current_target.transform.position.z);
 
@@ -279,7 +278,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void SwordJumpingDashFixedUpdate() {
-        if (in_special_attack) {
+        if (in_special_attack && !end_special_attack) {
             float y_diff = transform.position.y - current_target.transform.position.y;
             float special_attack_jump_power = 100f;
 
@@ -291,17 +290,6 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                 SwordDashTowardsTargetFixedUpdate();
             }
         }
-    }
-
-    void SwordJumpAttackEnd() {
-        if (grounded) {
-            SpecialAttackFlags.SetAllFlagsOff();
-            update = DefaultUpdate;
-            fixed_update = DefaultFixedUpdate;
-            return;
-        }
-
-        // We may add chain attack features in this area in the future
     }
 
     void DoNothingUpdate() {
@@ -376,7 +364,12 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void UnsetSpecialAttack() {
+        // this is basically a full reset - we shouldn't have anything to do
+        // with a special attack after this function is called
         in_special_attack = false;
+        end_special_attack = false;
+        end_step_complete = false;
+
         SpecialAttackFlags.SetAllFlagsOff();
         update = DefaultUpdate;
         fixed_update = DefaultFixedUpdate;

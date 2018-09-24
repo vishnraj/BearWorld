@@ -108,7 +108,7 @@ namespace EnemyHealthEvents {
 }
 
 namespace PlayerAttackEvents {
-    public enum PLAYER_ATTACK_EVENT { SPECIAL_ATTACK_START, SPECIAL_ATTACK_END, SPECIAL_ATTACK_TERMINATE };
+    public enum PLAYER_ATTACK_EVENT { SPECIAL_ATTACK_START, SPECIAL_ATTACK_END, SPECIAL_ATTACK_COMPLETE, SPECIAL_ATTACK_TERMINATE };
 
     public class PlayerAttackControllerPublisher {
         public delegate void PlayerAttackControllerHandler(string weapon_name, PLAYER_ATTACK_EVENT e);
@@ -126,7 +126,7 @@ namespace PlayerAttackEvents {
 }
 
 namespace MovementEvents {
-    public enum MOVEMENT_EVENT { SPECIAL_ATTACK_END }
+    public enum MOVEMENT_EVENT { SPECIAL_ATTACK_END, SPECIAL_ATTACK_COMPLETE }
 
     public class MovementEventPublisher {
         public delegate void MovementEventHandler(MOVEMENT_EVENT e);
