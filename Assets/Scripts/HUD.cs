@@ -280,5 +280,10 @@ public class HUD : MonoBehaviour {
         Vector2 game_over_position = new Vector2(hud_rect.rect.x + hud_rect.sizeDelta.x * .6f, hud_rect.rect.y + hud_rect.sizeDelta.y * .5f);
 
         game_over_rect.anchoredPosition = game_over_position;
+
+        GameObject button = null;
+        button = Instantiate(Resources.Load("Prefabs/ToMainMenu"), transform.position, new Quaternion()) as GameObject;
+        button.transform.SetParent(transform);
+        button.GetComponent<RectTransform>().anchoredPosition3D = new Vector3(300, -150, 0);
     }
 }
