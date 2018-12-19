@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TargetingEvents;
 using InventoryEvents;
 using AimingEvents;
+using PlayerHealthEvents;
 
 // Used to deliver target(s) to other systems
 public class AimingSystem : MonoBehaviour
@@ -46,6 +47,7 @@ public class AimingSystem : MonoBehaviour
 
         event_manager.GetComponent<ComponentEventManager>().targeting_publisher.TargetingEvent += TargetingEventCallback;
         event_manager.GetComponent<ComponentEventManager>().inventory_publisher.InventoryEvent += InventoryEventCallback;
+        event_manager.GetComponent<ComponentEventManager>().health_publisher.PlayerHealthEvent += PlayerHealthEventsCallback;
 
         update = null;
         enabled = false; // seems a little messy , but we need this to run after Awake for some of the above
@@ -143,6 +145,17 @@ public class AimingSystem : MonoBehaviour
                     targeting_icon.GetComponent<Image>().enabled = false;
                     enabled = false; // must set before
                     publisher.OnAimingEvent(null, AIMING_EVENT.AIM_OFF);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void PlayerHealthEventsCallback(float health, PLAYER_HEALTH_EVENT e) {
+        switch (e) {
+            case PLAYER_HEALTH_EVENT.DEAD: {
+                    enabled = false; // it's extremely important that this stop sending out updates as soon as the player dies - it seems to lead to bad state later if not
                 }
                 break;
             default:

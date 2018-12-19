@@ -27,14 +27,16 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     bool end_step_complete = false; // also communicated by PlayerAttackController to this script - when the attack is fully complete
 
     // specific to special attack bools
-    static class SpecialAttackFlags {
-        static public bool sword_jump_attack = false;
-        static public bool enable_sword_attack_jump = false;
+    class SpecialAttackFlags {
+        public bool sword_jump_attack = false;
+        public bool enable_sword_attack_jump = false;
 
-        static public void SetAllFlagsOff() {
+        public void SetAllFlagsOff() {
             sword_jump_attack = false;
         }
     }
+
+    SpecialAttackFlags special_flags;
 
     Rigidbody rb;
     Rotation rt;
@@ -50,10 +52,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     DoUpdate update;
     DoUpdate fixed_update;
 
-    static class MovementOverrideMap {
-        static Dictionary<string, DoUpdate> weapon_name_to_override = null;
+    class MovementOverrideMap {
+        Dictionary<string, DoUpdate> weapon_name_to_override = null;
 
-        public static Dictionary<string, DoUpdate> Instance(XboxOneControllerThirdPersonMovement parent) {
+        public Dictionary<string, DoUpdate> Instance(XboxOneControllerThirdPersonMovement parent) {
             if (weapon_name_to_override == null) {
                 weapon_name_to_override = new Dictionary<string, DoUpdate>();
 
@@ -81,6 +83,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
 
         update = DefaultUpdate;
         fixed_update = DefaultFixedUpdate;
+
+        special_flags = new SpecialAttackFlags();
     }
 
     void Awake()
@@ -107,29 +111,31 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     }
 
     void PlayerAttackEventsCallback(string weapon_name, PLAYER_ATTACK_EVENT e) {
+        MovementOverrideMap m = new MovementOverrideMap();
+
         switch (e) {
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_START: {
-                    if (!in_special_attack && MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
-                        update = MovementOverrideMap.Instance(this)[weapon_name];
+                    if (!in_special_attack && m.Instance(this).ContainsKey(weapon_name)) {
+                        update = m.Instance(this)[weapon_name];
                         in_special_attack = true;
                     }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_END: {
-                    if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
+                    if (m.Instance(this).ContainsKey(weapon_name)) {
                         end_special_attack = true; // treat this different as a given special attack will choose its clean up process
                                                    // and at the end of that in_special_attack will get set to false
                     }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_COMPLETE: {
-                    if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
+                    if (m.Instance(this).ContainsKey(weapon_name)) {
                         end_step_complete = true; // this is basically like an unlock on the special attack
                     }
                 }
                 break;
             case PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_TERMINATE: {
-                    if (MovementOverrideMap.Instance(this).ContainsKey(weapon_name)) {
+                    if (m.Instance(this).ContainsKey(weapon_name)) {
                         UnsetSpecialAttack(); // terminates don't care about the special attack clean up process, just kill whatever is happening
                     }
                 }
@@ -234,13 +240,13 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         }
 
         float to_target_y_threshold = 1.0f;
-        if (!grounded && !SpecialAttackFlags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
-            SpecialAttackFlags.sword_jump_attack = true; // matters that it gets set in the first update
-            SpecialAttackFlags.enable_sword_attack_jump = true;
+        if (!grounded && !special_flags.sword_jump_attack && ((current_target.transform.position.y - transform.position.y) > to_target_y_threshold)) {
+            special_flags.sword_jump_attack = true; // matters that it gets set in the first update
+            special_flags.enable_sword_attack_jump = true;
             fixed_update = SwordJumpingDashFixedUpdate; // all checks need to happen in fixed update loop, thus we switch the entire update function to perform this behavior
         }
 
-        if (!SpecialAttackFlags.sword_jump_attack) {
+        if (!special_flags.sword_jump_attack) {
             update_xz_user_in_fixed = SwordDashTowardsTargetFixedUpdate;
             update_non_xz_user_in_fixed = DoNothingFixedUpdate;
         }
@@ -283,10 +289,10 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
             float special_attack_jump_power = 100f;
 
             // jump above the enemy
-            if (y_diff < 0f && SpecialAttackFlags.enable_sword_attack_jump) {
+            if (y_diff < 0f && special_flags.enable_sword_attack_jump) {
                 rb.AddForce(transform.up * special_attack_jump_power);
             } else {
-                SpecialAttackFlags.enable_sword_attack_jump = false;
+                special_flags.enable_sword_attack_jump = false;
                 SwordDashTowardsTargetFixedUpdate();
             }
         }
@@ -370,7 +376,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         end_special_attack = false;
         end_step_complete = false;
 
-        SpecialAttackFlags.SetAllFlagsOff();
+        special_flags.SetAllFlagsOff();
         update = DefaultUpdate;
         fixed_update = DefaultFixedUpdate;
     }

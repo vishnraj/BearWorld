@@ -5,24 +5,24 @@ using UnityEngine;
 namespace Weapon {
     public enum WEAPON_TYPE { RANGE, MELEE }
 
-    static class WeaponNames {
+    class WeaponNames {
         public const string SWORD = "Sword";
 
         public const string RAYGUN = "Raygun";
         public const string BOMBS = "Bombs";
     }
 
-    static class DamagerNames {
+    class DamagerNames {
         public const string BLADE = "Blade";
 
         public const string LASER_SHOT = "RaygunLaserShot";
         public const string BOMB = "Bomb";
     }
 
-    static class WeaponTypeMap {
-        static Dictionary<string, WEAPON_TYPE> weapon_name_to_type = null;
+    class WeaponTypeMap {
+        Dictionary<string, WEAPON_TYPE> weapon_name_to_type = null;
 
-        public static Dictionary<string, WEAPON_TYPE> Instance() {
+        public Dictionary<string, WEAPON_TYPE> Instance() {
             if (weapon_name_to_type == null) {
                 weapon_name_to_type = new Dictionary<string, WEAPON_TYPE>();
 

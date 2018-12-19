@@ -46,7 +46,7 @@ public class XboxOneControllerRotatingCamera : MonoBehaviour
         }
     }
 
-    static float ClampAngle(float angle, float min, float max)
+    float ClampAngle(float angle, float min, float max)
     {
         if (angle < -360)
         {

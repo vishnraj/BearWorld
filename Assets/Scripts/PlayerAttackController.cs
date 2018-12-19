@@ -17,10 +17,10 @@ public class PlayerAttackController : MonoBehaviour {
     bool end_special_attack_step = false;
     int attack_frame_end = 0;
 
-    static class SpecialAttackFramesThreshold {
-        static Dictionary<string, int> weapon_frames_thresholds = null;
+    class SpecialAttackFramesThreshold {
+        Dictionary<string, int> weapon_frames_thresholds = null;
 
-        public static Dictionary<string, int> Instance() {
+        public Dictionary<string, int> Instance() {
             if (weapon_frames_thresholds == null) {
                 weapon_frames_thresholds = new Dictionary<string, int>();
 
@@ -31,10 +31,10 @@ public class PlayerAttackController : MonoBehaviour {
         }
     }
 
-    static class WeaponHasSpecialAttack {
-        static HashSet<string> weapon_has_special_attack = null;
+    class WeaponHasSpecialAttack {
+        HashSet<string> weapon_has_special_attack = null;
 
-        public static HashSet<string> Instance() {
+        public HashSet<string> Instance() {
             if (weapon_has_special_attack == null) {
                 weapon_has_special_attack = new HashSet<string>();
 
@@ -51,9 +51,11 @@ public class PlayerAttackController : MonoBehaviour {
     DoUpdate update;
 
     void TargetingEventsCallback(GameObject target, TARGETING_EVENT e) {
+        WeaponHasSpecialAttack w = new WeaponHasSpecialAttack();
+
         switch (e) {
             case TARGETING_EVENT.LOCK_ON: {
-                    if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName())) {
+                    if (w.Instance().Contains(weapon.GetWeaponName())) {
                         if (!in_special_attack && attacking) {
                             weapon.EndAttack();
                             attacking = false;
@@ -67,7 +69,7 @@ public class PlayerAttackController : MonoBehaviour {
             case TARGETING_EVENT.FREE: {
                     // can happen during an unequip
                     if (weapon != null) {
-                        if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName()) && in_special_attack) {
+                        if (w.Instance().Contains(weapon.GetWeaponName()) && in_special_attack) {
                             TerminateSpecialAttack();
                         }
                     }
@@ -81,15 +83,17 @@ public class PlayerAttackController : MonoBehaviour {
     }
 
     void MovementEventCallback(MOVEMENT_EVENT e) {
+        WeaponHasSpecialAttack w = new WeaponHasSpecialAttack();
+
         switch (e) {
             case MOVEMENT_EVENT.SPECIAL_ATTACK_END: {
-                    if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName())) {
+                    if (w.Instance().Contains(weapon.GetWeaponName())) {
                         EndSpecialAttack();
                     }
                 }
                 break;
             case MOVEMENT_EVENT.SPECIAL_ATTACK_COMPLETE: {
-                    if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName())) {
+                    if (w.Instance().Contains(weapon.GetWeaponName())) {
                         attacking = false;
                         in_special_attack = false;
                     }
@@ -157,9 +161,12 @@ public class PlayerAttackController : MonoBehaviour {
     }
 
     void WeaponLockOnUpdate() {
+        SpecialAttackFramesThreshold f = new SpecialAttackFramesThreshold();
+        WeaponHasSpecialAttack w = new WeaponHasSpecialAttack();
+
         if (weapon != null) {
             if (Input.GetAxis("RightTriggerAxis") > 0 && !attacking) {
-                if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName())) {
+                if (w.Instance().Contains(weapon.GetWeaponName())) {
                     attacking = true;
                     in_special_attack = true;
 
@@ -170,14 +177,14 @@ public class PlayerAttackController : MonoBehaviour {
                 }
             }
             else if (Input.GetAxis("RightTriggerAxis") == 0 && attacking) {
-                if (!WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName())) {
+                if (!w.Instance().Contains(weapon.GetWeaponName())) {
                     weapon.EndAttack();
                     attacking = false;
                 }
             }
 
-            if (end_special_attack_step && WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName()) && 
-                (Time.frameCount - attack_frame_end) >= SpecialAttackFramesThreshold.Instance()[weapon.GetWeaponName()]) {
+            if (end_special_attack_step && w.Instance().Contains(weapon.GetWeaponName()) && 
+                (Time.frameCount - attack_frame_end) >= f.Instance()[weapon.GetWeaponName()]) {
                 weapon.EndAttack();
                 end_special_attack_step = false;
                 publisher.OnPlayerAttackEvent(weapon.GetWeaponName(), PLAYER_ATTACK_EVENT.SPECIAL_ATTACK_COMPLETE);
@@ -229,13 +236,15 @@ public class PlayerAttackController : MonoBehaviour {
     }
 
     public void UnequipWeapon() {
+        WeaponHasSpecialAttack w = new WeaponHasSpecialAttack();
+
         if (attacking) {
             attacking = false;
 
             // if something was performing some task based on a special attack for a previous weapon
             // best to notify it to let it know that this is about to change - it can figure out what
             // to do from there, allowing for some continuation in task or just stopping immediately
-            if (WeaponHasSpecialAttack.Instance().Contains(weapon.GetWeaponName()) && in_special_attack) {
+            if (w.Instance().Contains(weapon.GetWeaponName()) && in_special_attack) {
                 TerminateSpecialAttack();
             }
         }

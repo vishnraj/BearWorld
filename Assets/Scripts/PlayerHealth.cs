@@ -28,7 +28,23 @@ public class PlayerHealth : BasicHealth
 
         if (health <= 0) {
             publisher.OnPlayerHealthEvent(health, PLAYER_HEALTH_EVENT.DEAD);
+
+            // Just to be safe, so we don't get in any weird states before we
+            // exit, I am disabling everything here (the health event above is
+            // intended for any systems separate to the player, but those attached
+            // to the player should just get disabled here)
+            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+            foreach (MonoBehaviour c in components) {
+                c.enabled = false;
+            }
+
+            components = GetComponentsInChildren<MonoBehaviour>();
+            foreach (MonoBehaviour c in components) {
+                c.enabled = false;
+            }
+
             Destroy(gameObject);
+
         }
     }
 

@@ -288,7 +288,9 @@ public class Inventory : MonoBehaviour {
     }
 
     private void set_ammo_type(string weapon_name) {
-        switch (Weapon.WeaponTypeMap.Instance()[weapon_name]) {
+        Weapon.WeaponTypeMap w = new Weapon.WeaponTypeMap();
+
+        switch (w.Instance()[weapon_name]) {
             case Weapon.WEAPON_TYPE.RANGE : {
                 c.SetAmmoAmount(ammo_inventory[weapon_name].ammo_amount);
                 c.SetAmmoType(ammo_inventory[weapon_name].ammo_type);
