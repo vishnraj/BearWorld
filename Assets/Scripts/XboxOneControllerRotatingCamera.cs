@@ -4,10 +4,14 @@ using Utility;
 
 public class XboxOneControllerRotatingCamera : MonoBehaviour
 {
-    public Transform target;
-    public float distance;
-    public float x = 0.0f;
-    public float y = 0.0f;
+    [SerializeField]
+    Transform target;
+    [SerializeField]
+    float distance;
+    [SerializeField]
+    float x = 0.0f;
+    [SerializeField]
+    float y = 0.0f;
 
     float xSpeed = 250.0f;
     float ySpeed = 120.0f;
@@ -44,6 +48,13 @@ public class XboxOneControllerRotatingCamera : MonoBehaviour
             transform.rotation = rotation;
             transform.position = position;
         }
+
+        // iterate the objects in stage that are considered barriers/ground - if the slice that is the viewport
+        // is outside the bounds of these, then shrink viewport to fit inside
+        // if the bounds are greater than the viewport at 1W and 1H, then don't adjust
+        // We also need the camera to come closer to the player when it's going to be outside the bounds, not sure how to do this
+            // It's likely that this will require viewport manipulation as well - 
+            // basically something that says if the view is going to contain things outside the boundaries, don't allow camera to move to that location
     }
 
     float ClampAngle(float angle, float min, float max)
