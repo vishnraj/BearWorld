@@ -48,13 +48,6 @@ public class XboxOneControllerRotatingCamera : MonoBehaviour
             transform.rotation = rotation;
             transform.position = position;
         }
-
-        // iterate the objects in stage that are considered barriers/ground - if the slice that is the viewport
-        // is outside the bounds of these, then shrink viewport to fit inside
-        // if the bounds are greater than the viewport at 1W and 1H, then don't adjust
-        // We also need the camera to come closer to the player when it's going to be outside the bounds, not sure how to do this
-            // It's likely that this will require viewport manipulation as well - 
-            // basically something that says if the view is going to contain things outside the boundaries, don't allow camera to move to that location
     }
 
     float ClampAngle(float angle, float min, float max)

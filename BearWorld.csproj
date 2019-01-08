@@ -126,6 +126,7 @@
     <Compile Include="Assets\Scripts\PlayerHealth.cs" />
     <Compile Include="Assets\Scripts\RaygunShooting.cs" />
     <Compile Include="Assets\Scripts\RaygunShot.cs" />
+    <Compile Include="Assets\Scripts\RealmUpdate.cs" />
     <Compile Include="Assets\Scripts\SetEnemyTags.cs" />
     <Compile Include="Assets\Scripts\SwordAttack.cs" />
     <Compile Include="Assets\Scripts\SwordDamage.cs" />
