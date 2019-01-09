@@ -11,6 +11,8 @@ public class RaygunShot : DamageDealer {
     bool expired = false;
     float start_time_of_destruction = 0.0f;
 
+    GameObject m_stage;
+
     Vector3 final_location;
     Vector3 direction;
     Rigidbody rb;
@@ -18,6 +20,9 @@ public class RaygunShot : DamageDealer {
     // Use this for initialization
     void Start()
     {
+        m_stage = GameObject.FindGameObjectWithTag("Stage");
+        transform.SetParent(m_stage.transform);
+
         rb = GetComponent<Rigidbody>();
     }
 
@@ -47,7 +52,7 @@ public class RaygunShot : DamageDealer {
     }
 
     void OnTriggerEnter(Collider collide) {
-        if (collide.tag != "Ammunition" && collide.tag != origin_tag) {
+        if (collide.tag != "Ammunition" && collide.tag != origin_tag && collide.tag != "Section") {
             GetComponent<SphereCollider>().enabled = false;
             GetComponent<MeshRenderer>().enabled = false;
 

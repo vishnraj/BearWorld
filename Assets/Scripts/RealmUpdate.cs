@@ -3,17 +3,66 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class RealmUpdate : MonoBehaviour {
+    [SerializeField]
+    GameObject m_sections;
+    [SerializeField]
+    GameObject m_stage;
+    [SerializeField]
+    GameObject m_player;
 
 	// Use this for initialization
 	void Start () {
 		
 	}
-	
-	// Update is called once per frame
-	void Update () {
-        // current approach - send a ray cast from the player forward, left, right, up and down
-        // for each "barrier" or "ground" tagged object that is hit first by the ray cast, do the following for each object in "stage":
-            // limit the objects that are in the current_realm (visible in the camera (outside of enemies) to those that fall in bounds
-            // of the barriers and ground objects that were encountered (comparing position for each object to that of the bounding objects)
+
+    public static void SetDefaultLayerRecursively(Transform t) {
+        t.gameObject.layer = LayerMask.NameToLayer("Default");
+
+        foreach (Transform child in t) {
+            SetDefaultLayerRecursively(child);
+        }
+    }
+
+    public static void SetRenderLayerRecursively(Transform t) {
+        if (t.gameObject.GetComponent<EnemyHealth>() != null) {
+            t.gameObject.layer = LayerMask.NameToLayer("Enemy_Layer");
+
+        }
+        else {
+            t.gameObject.layer = LayerMask.NameToLayer("Current_Realm");
+        }
+
+        foreach (Transform child in t) {
+            SetRenderLayerRecursively(child);
+        }
+    }
+
+    void LateUpdate () {
+        // The player generally is in the current_realm, but new weapons may not be
+        SetRenderLayerRecursively(m_player.transform);
+
+        List<Collider> current_relevant_sections = new List<Collider>();
+        foreach (Transform child in m_sections.transform) {
+            Collider c = child.GetComponent<Collider>();
+            if (c.bounds.Contains(m_player.transform.position)) {
+                current_relevant_sections.Add(c);
+            }
+        }
+
+        foreach (Transform child in m_stage.transform) {
+            bool found = false;
+            foreach (Collider c in current_relevant_sections) {
+                if (c.bounds.Contains(child.position)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                SetRenderLayerRecursively(child);               
+            } else {
+                SetDefaultLayerRecursively(child);
+            }
+        }
     }
 }

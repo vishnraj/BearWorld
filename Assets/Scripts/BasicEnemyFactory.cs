@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class BasicEnemyFactory : MonoBehaviour {
+    [SerializeField]
+    GameObject m_stage;
+
     public GameObject desired_spawn_object;
     public string desired_weapon;
     public GameObject desired_ammo;
@@ -44,6 +47,7 @@ public class BasicEnemyFactory : MonoBehaviour {
                 Vector3 portal_position = portal.position + portal.forward;
                 GameObject enemy = Instantiate(desired_spawn_object, portal_position, transform.rotation) as GameObject;
                 enemies.Add(enemy);
+                enemy.transform.SetParent(m_stage.transform);
 
                 BasicEnemyAI ai = enemy.GetComponent<BasicEnemyAI>();
                 ai.Setup(desired_weapon, desired_ammo, Mathf.Infinity, ref target);

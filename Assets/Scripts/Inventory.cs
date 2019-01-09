@@ -18,11 +18,13 @@ namespace Items {
 
     public class DropFactory {
         // (kind of a) Factory function
-        public void Drop(List<string> drops, Vector3 pos) {
+        public void Drop(List<string> drops, Vector3 pos, Transform stage) {
             System.Random rnd = new System.Random();
             int i = rnd.Next(0, drops.Count);
 
             GameObject dropped = Object.Instantiate(Resources.Load("Prefabs/" + drops[i]), pos, new Quaternion()) as GameObject;
+            dropped.transform.SetParent(stage);
+
             dropped.GetComponent<BoxCollider>().enabled = true;
             dropped.GetComponent<Rigidbody>().isKinematic = false;
             dropped.GetComponent<Rigidbody>().mass = 1;
@@ -34,6 +36,9 @@ namespace Items {
 // to player later as well as notifying other systems
 // about these items 
 public class Inventory : MonoBehaviour {
+    [SerializeField]
+    GameObject m_stage;
+
     public int max_items;
     public string desired_equipped;
     public GameObject equipped = null;
@@ -218,6 +223,8 @@ public class Inventory : MonoBehaviour {
             // similar to how we have a spawn function for equipping
 
             GameObject item = (GameObject)Instantiate(Resources.Load("Prefabs/" + dropped));
+            item.transform.SetParent(m_stage.transform);
+
             item.transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
             item.GetComponent<BoxCollider>().enabled = true;
             item.GetComponent<Rigidbody>().isKinematic = false;

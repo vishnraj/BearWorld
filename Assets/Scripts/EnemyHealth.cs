@@ -15,6 +15,8 @@ public class EnemyHealth : BasicHealth
     GameObject event_manager = null;
     GameObject enemies = null;
 
+    GameObject m_stage;
+
     float start_spawn = 0;
 
     TargetingPublisher targeting_publisher;
@@ -22,6 +24,8 @@ public class EnemyHealth : BasicHealth
     // Use this for initialization
     void Start()
     {
+        m_stage = GameObject.FindGameObjectWithTag("Stage");
+
         // enemies are prefabs, so prior to spawning we cannot know
         // about other objects in the scene - we grab revelant ones here    
         event_manager = GameObject.Find("GlobalEventManager");
@@ -74,7 +78,7 @@ public class EnemyHealth : BasicHealth
 
             if (random_drop_list.Count != 0) {
                 Items.DropFactory f = new Items.DropFactory();
-                f.Drop(random_drop_list, transform.position);
+                f.Drop(random_drop_list, transform.position, m_stage.transform);
             }
 
             targeting_publisher.TargetingEvent -= TargetingEventCallback;
