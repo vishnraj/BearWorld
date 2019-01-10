@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using PlayerHealthEvents;
 
 public class RealmUpdate : MonoBehaviour {
     [SerializeField]
@@ -10,10 +11,24 @@ public class RealmUpdate : MonoBehaviour {
     [SerializeField]
     GameObject m_player;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
+    [SerializeField]
+    GameObject m_event_manager;
+
+    void PlayerHealthEventsCallback(float health, PLAYER_HEALTH_EVENT e) {
+        switch (e) {
+            case PLAYER_HEALTH_EVENT.DEAD: {
+                    enabled = false;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Use this for initialization
+    void Start () {
+        m_event_manager.GetComponent<ComponentEventManager>().health_publisher.PlayerHealthEvent += PlayerHealthEventsCallback;
+    }
 
     public static void SetDefaultLayerRecursively(Transform t) {
         t.gameObject.layer = LayerMask.NameToLayer("Default");

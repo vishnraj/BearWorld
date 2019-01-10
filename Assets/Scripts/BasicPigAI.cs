@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class BasicPigAI : BasicEnemyAI {
+    [SerializeField]
+    float m_stop_distance;
+
     public float speed;
 
     // Use this for initialization
@@ -21,7 +24,11 @@ public class BasicPigAI : BasicEnemyAI {
 
            
             float step = speed * Time.deltaTime;
-            transform.position = Vector3.MoveTowards(transform.position, target.transform.position, step);
+
+            Vector3 distance = target.transform.position - transform.position;
+            if (distance.magnitude > m_stop_distance) {
+                transform.position = Vector3.MoveTowards(transform.position, target.transform.position, step);
+            }
         } else {
             w.EndAttack();
         }

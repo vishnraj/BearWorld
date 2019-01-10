@@ -49,9 +49,12 @@ public class BasicEnemyFactory : MonoBehaviour {
                 enemies.Add(enemy);
                 enemy.transform.SetParent(m_stage.transform);
 
-                BasicEnemyAI ai = enemy.GetComponent<BasicEnemyAI>();
-                ai.Setup(desired_weapon, desired_ammo, Mathf.Infinity, ref target);
-                ai.enabled = true;
+                // this way we can spawn dummies when needed
+                if (target) {
+                    BasicEnemyAI ai = enemy.GetComponent<BasicEnemyAI>();
+                    ai.Setup(desired_weapon, desired_ammo, Mathf.Infinity, ref target);
+                    ai.enabled = true;
+                }
 
                 yield return new WaitForSeconds(spawn_interval);
             }
