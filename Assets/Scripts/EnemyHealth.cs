@@ -34,7 +34,7 @@ public class EnemyHealth : BasicHealth
         // We do this because sometimes we need to add the enemy wherever
         // it is actually spawned - at that point we will have it in the list
         // prior to getting here and we don't want to add it twice
-        if (!enemies.GetComponent<EnemyTracker>().FindEnemy(gameObject)) {
+        if (!enemies.GetComponent<EnemyTracker>().FindEnemy(gameObject.GetInstanceID())) {
             enemies.GetComponent<EnemyTracker>().AddEnemy(gameObject);
         }
 
@@ -62,7 +62,7 @@ public class EnemyHealth : BasicHealth
                 enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject); // we don't want this to be tracked (unless reformed)
 
                 if (player_locked_on && start) {
-                    publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+                    publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
                 }
                 
                 enabled = false;
@@ -71,7 +71,7 @@ public class EnemyHealth : BasicHealth
 
             if (player_locked_on && start) {
                 enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
-                publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
+                publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.DESTROY);
             } else {
                 enemies.GetComponent<EnemyTracker>().RemoveEnemy(gameObject);
             }
@@ -90,14 +90,19 @@ public class EnemyHealth : BasicHealth
             // mainly for explosion objects, because they may inherit targeting
             // state from parent, we need to create UI element the first time through
             if (!start) {
-                publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health,
-                    transform.position), ENEMY_HEALTH_EVENT.INIT);
+                if (enemies.GetComponent<EnemyTracker>().FindRenderedEnemy(gameObject.GetInstanceID())) {
+                    publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health,
+                        transform.position), ENEMY_HEALTH_EVENT.INIT);
+                }
+
                 start = true;
             }
 
-            // This is a somewhat unforunate side effect - only the enemy actually knows where it is, so only it
-            // can communicate this with the UI - thus we need to do this during each update if player is locked on
-            publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
+            if (enemies.GetComponent<EnemyTracker>().FindRenderedEnemy(gameObject.GetInstanceID())) {
+                // This is a somewhat unforunate side effect - only the enemy actually knows where it is, so only it
+                // can communicate this with the UI - thus we need to do this during each update if player is locked on
+                publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
+            }
         }
     }
 
@@ -108,7 +113,7 @@ public class EnemyHealth : BasicHealth
 
     public override void Notify() {
         if (player_locked_on && start) {
-            publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
+            publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.UPDATE);
         }
     }
 
@@ -116,14 +121,17 @@ public class EnemyHealth : BasicHealth
         switch (e) {
             case TARGETING_EVENT.FREE: {
                     if (player_locked_on) {
-                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.FREE);
+                        publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.FREE);
                         player_locked_on = false;
                     }
                 }
                 break;
             case TARGETING_EVENT.LOCK_ON: {
                     if (!player_locked_on) {
-                        publisher.OnEnemyHealthEvent(new EnemyHealthData(GetInstanceID(), health, transform.position), ENEMY_HEALTH_EVENT.INIT);
+                        if (enemies.GetComponent<EnemyTracker>().FindRenderedEnemy(gameObject.GetInstanceID())) {
+                            publisher.OnEnemyHealthEvent(new EnemyHealthData(gameObject.GetInstanceID(), health,
+                                transform.position), ENEMY_HEALTH_EVENT.INIT);
+                        }
                         player_locked_on = true;
                         start = true; // so we don't create ui_element again
                     }

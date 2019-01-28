@@ -93,7 +93,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         }
 
         if (!IsValidTarget(target)) {
-            target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetAllEnemies());
+            target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetOnlyRenderedEnemies());
 
             if (target == null) {
                 DisableTargeting();
@@ -199,8 +199,9 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             case ENEMY_HEALTH_EVENT.DESTROY: {
                     // an enemy health even destory may not always indicate that
                     // we need to reset the target, but if needed then we do it
-                    if (!Enemies.GetComponent<EnemyTracker>().FindEnemy(target)) {
-                        target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetAllEnemies());
+                    // we may occassionally call this when there is no target
+                    if (target && !Enemies.GetComponent<EnemyTracker>().FindRenderedEnemy(target.GetInstanceID())) {
+                        target = GetClosestEnemy(Enemies.GetComponent<EnemyTracker>().GetOnlyRenderedEnemies());
 
                         if (target == null) {
                             DisableTargeting();
@@ -220,7 +221,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
         // sanity checks, but neither should happen, because the
         // EnemyHealthEventsCallback should capture when a destroy occurs
         // meaning if the target suddenly becomes invalid, we reset it there
-        if (_target != null && Enemies.GetComponent<EnemyTracker>().FindEnemy(_target)) {
+        if (_target != null && Enemies.GetComponent<EnemyTracker>().FindRenderedEnemy(_target.GetInstanceID())) {
             Vector3 to_target = _target.transform.position - transform.position;
             if (!(to_target.magnitude <= current_weapon_range)) {
                 return false;
@@ -281,7 +282,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 		current_joystick_angle = rt.CalculateZXRotation(new Vector3(input_x, 0, input_y));
 
         sorted_by_chosen_direction.Clear();
-        List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().GetAllEnemies();
+        List<GameObject> enemies = Enemies.GetComponent<EnemyTracker>().GetOnlyRenderedEnemies();
         for (int i = 0; i < enemies.Count; ++i) {
 			GameObject current_enemy = enemies[i];
 

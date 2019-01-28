@@ -10,6 +10,8 @@ public class RealmUpdate : MonoBehaviour {
     GameObject m_stage;
     [SerializeField]
     GameObject m_player;
+    [SerializeField]
+    GameObject m_enemies;
 
     [SerializeField]
     GameObject m_event_manager;
@@ -79,5 +81,7 @@ public class RealmUpdate : MonoBehaviour {
                 SetDefaultLayerRecursively(child);
             }
         }
+
+        m_enemies.GetComponent<EnemyTracker>().UpdateRenderedEnemies();
     }
 }

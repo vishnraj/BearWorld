@@ -97,7 +97,9 @@ public class HUD : MonoBehaviour {
     void EnemyHealthEventsCallback(EnemyHealthData data, ENEMY_HEALTH_EVENT e) {
         switch (e) {
             case ENEMY_HEALTH_EVENT.INIT: {
-                    CreateEnemyHealthRemainingOnGUI(data.id, data.health);
+                    if (!enemy_health_remaining.ContainsKey(data.id)) {
+                        CreateEnemyHealthRemainingOnGUI(data.id, data.health);
+                    }
                 }
                 break;
             case ENEMY_HEALTH_EVENT.UPDATE: {
