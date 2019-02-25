@@ -11,7 +11,7 @@ public class RaygunShooting : BasicWeapon
 
     Vector3 target_position = Vector3.zero;
 
-    IEnumerator firing;
+    IEnumerator firing = null;
     IEnumerator end_step = null;
 
     // Use this for initialization
@@ -127,6 +127,11 @@ public class RaygunShooting : BasicWeapon
     public override void EndAttack() {
         if (firing != null) {
             StopCoroutine(firing);
+            firing = null;
+        }
+        if (end_step != null) {
+            StopCoroutine(end_step);
+            end_step = null;
         }
     }
 
