@@ -6,6 +6,8 @@ using UnityEngine.AI;
 public class BasicPigAI : BasicEnemyAI {
     [SerializeField]
     float ray_radius;
+    [SerializeField]
+    float shoot_range; // range at when to begin firing
 
     NavMeshAgent agent;
 
@@ -27,7 +29,7 @@ public class BasicPigAI : BasicEnemyAI {
             Ray ray = new Ray(transform.position, to_target);
 
             int layer = 1 << LayerMask.NameToLayer("Current_Realm");
-            if (Physics.SphereCast(ray, ray_radius, out hit, Mathf.Infinity, layer) && hit.collider.gameObject.GetComponent<Player>() != null) {
+            if (Physics.SphereCast(ray, ray_radius, out hit, shoot_range, layer) && hit.collider.gameObject.tag ==  "Player") {
                 Attack(to_target);
             } else {
                 w.EndAttack();

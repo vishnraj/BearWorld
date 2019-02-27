@@ -40,6 +40,6 @@ public class SwordAttack : BasicWeapon {
         pos += transform.up * .2f;
         transform.position = pos;
 
-        transform.Rotate(-35, 90, 0);
+        transform.Rotate(-90, 90, 0);
     }
 }

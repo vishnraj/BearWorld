@@ -5,6 +5,10 @@ using UnityEngine;
 public class BasicEnemyFactory : MonoBehaviour {
     [SerializeField]
     GameObject m_stage;
+    [SerializeField]
+    float ray_radius;
+    [SerializeField]
+    float spawn_range; // distance from player to begin spawning
 
     public GameObject desired_spawn_object;
     public string desired_weapon;
@@ -41,6 +45,21 @@ public class BasicEnemyFactory : MonoBehaviour {
 
     IEnumerator Spawn() {
         while (true) {
+            RaycastHit hit;
+            Vector3 to_target = target.transform.position - portal.transform.position;
+            Ray ray = new Ray(portal.transform.position, to_target);
+
+            int layer = 1 << LayerMask.NameToLayer("Current_Realm"); // check if the factory is within sight of player
+            if (Physics.SphereCast(ray, ray_radius, out hit, spawn_range, layer)) {
+                if (hit.collider.gameObject.tag != "Player") {
+                    yield return new WaitForSeconds(spawn_interval);
+                    continue;
+                }
+            } else {
+                yield return new WaitForSeconds(spawn_interval);
+                continue;
+            }
+
             if (enemies.Count >= max_enemies) {
                 yield return new WaitForSeconds(spawn_interval);
             } else {
