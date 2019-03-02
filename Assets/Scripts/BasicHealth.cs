@@ -40,13 +40,30 @@ public class BasicHealth : MonoBehaviour {
         }
     }
 
+    private void OnTriggerStay(Collider other) {
+        DamageDealer d = other.gameObject.GetComponent<DamageDealer>();
+
+        if (d != null && d.enabled && d.GetOriginTag() != tag) {
+            if (can_damage) {
+                float new_health = d.DealDamage(health, GetInstanceID());
+                if (new_health != health) {
+                    Notify();
+                    health = new_health;
+                }
+            }
+        }
+    }
+
     private void OnTriggerEnter(Collider other) {
         DamageDealer d = other.gameObject.GetComponent<DamageDealer>();
 
         if (d != null && d.enabled && d.GetOriginTag() != tag) {
             if (can_damage) {
-                health = d.DealDamage(health);
-                Notify();
+                float new_health = d.DealDamage(health, GetInstanceID());
+                if (new_health != health) {
+                    Notify();
+                    health = new_health;
+                }
             }
         }
     }
