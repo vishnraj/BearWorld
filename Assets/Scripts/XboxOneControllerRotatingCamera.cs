@@ -13,11 +13,11 @@ public class XboxOneControllerRotatingCamera : MonoBehaviour
     [SerializeField]
     float y = 0.0f;
 
-    float xSpeed = 250.0f;
-    float ySpeed = 120.0f;
+    float x_speed = 250.0f;
+    float y_speed = 120.0f;
 
-    float yMinLimit = -20;
-    float yMaxLimit = 80;
+    float y_min_limit = -20;
+    float y_max_limit = 80;
 
     void Start()
     {
@@ -32,22 +32,25 @@ public class XboxOneControllerRotatingCamera : MonoBehaviour
 
     void LateUpdate()
     {
+        if (target == null) return;
+
+        Reposition();
+    }
+
+    void Reposition() {
         Vector3 vec = new Vector3(0.0f, 0.0f, -distance);
 
-        if (target)
-        {
-            x += (float)(Input.GetAxis("RightJoystickX") * xSpeed * 0.02);
-            y -= (float)(-Input.GetAxis("RightJoystickY") * ySpeed * 0.02);
+        x += (float)(Input.GetAxis("RightJoystickX") * x_speed * 0.02);
+        y -= (float)(-Input.GetAxis("RightJoystickY") * y_speed * 0.02);
 
-            y = ClampAngle(y, yMinLimit, yMaxLimit);
+        y = ClampAngle(y, y_min_limit, y_max_limit);
 
-            Quaternion rotation = Quaternion.Euler(y, x, 0);
+        Quaternion rotation = Quaternion.Euler(y, x, 0);
 
-            var position = rotation * vec + target.position;
+        var position = rotation * vec + target.position;
 
-            transform.rotation = rotation;
-            transform.position = position;
-        }
+        transform.rotation = rotation;
+        transform.position = position;
     }
 
     float ClampAngle(float angle, float min, float max)

@@ -10,8 +10,13 @@ public class BombDamage : DamageDealer {
     float start;
     bool expired = false;
 
-	// Use this for initialization
-	void Start () {
+    GameObject m_stage;
+
+    // Use this for initialization
+    void Start () {
+        m_stage = GameObject.FindGameObjectWithTag("Stage");
+        transform.SetParent(m_stage.transform);
+
         start = Time.time;
 	}
 

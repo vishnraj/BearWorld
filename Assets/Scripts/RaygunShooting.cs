@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using PlayerHealthEvents;
 
 public class RaygunShooting : BasicWeapon
 {
@@ -9,15 +10,37 @@ public class RaygunShooting : BasicWeapon
 
     bool currently_firing = false;
 
+    bool can_fire = false;
+
     Vector3 target_position = Vector3.zero;
 
     IEnumerator firing = null;
     IEnumerator end_step = null;
 
+    GameObject m_event_manager;
+
+    void PlayerHealthEventsCallback(float health, PLAYER_HEALTH_EVENT e) {
+        switch (e) {
+            case PLAYER_HEALTH_EVENT.DEAD: {
+                    enabled = false;
+                    // so basically, like with enemy factory, anytime we have have coroutines running
+                    // we need to end them when the player dies to avoid bad things happening
+                    // this is a good reason to avoid them if possible, but in this case, the timer
+                    // for firing needs to be indepedent of the game loop, so I'm using one
+                    StopCoroutine(firing);
+                    StopCoroutine(end_step);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     // Use this for initialization
     void Start()
     {
-
+        m_event_manager = GameObject.Find("GlobalEventManager");
+        m_event_manager.GetComponent<ComponentEventManager>().health_publisher.PlayerHealthEvent -= PlayerHealthEventsCallback;
     }
 
     private void Awake() {
@@ -89,10 +112,9 @@ public class RaygunShooting : BasicWeapon
 
     IEnumerator Fire()
     {
-        while (true)
+        while (can_fire)
         {
-            if (c.GetAmmoAmount() != 0 && !currently_firing)
-            {
+            if (c.GetAmmoAmount() != 0 && !currently_firing) {
                 if (c is Player) {
                     PlayerShooting();           
                 } else {
@@ -107,7 +129,7 @@ public class RaygunShooting : BasicWeapon
                 yield return StartCoroutine(end_step);
             }
 
-            yield return new WaitForSeconds(0.0f);
+            yield return new WaitForSeconds(0.0f); // we want to start as quickly as possible, but we need to yield to prevent a hang
         }
     }
 
@@ -116,22 +138,22 @@ public class RaygunShooting : BasicWeapon
         currently_firing = false;
 
         end_step = null;
-        yield return new WaitForSeconds(0.0f);
+        yield break; // stop this coroutine
     }
 
     public override void Attack() {
+        if (can_fire) return; // protect against just stopping and starting for no reason
+                              // generally can only happen with AI
+        can_fire = true;
         firing = Fire();
         StartCoroutine(firing);
     }
 
     public override void EndAttack() {
+        can_fire = false;
         if (firing != null) {
             StopCoroutine(firing);
             firing = null;
-        }
-        if (end_step != null) {
-            StopCoroutine(end_step);
-            end_step = null;
         }
     }
 

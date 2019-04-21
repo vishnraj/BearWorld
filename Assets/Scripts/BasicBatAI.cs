@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using Utility;
+using InputEvents;
 
 public class BasicBatAI : BasicEnemyAI {
     public float speed;
@@ -16,9 +17,33 @@ public class BasicBatAI : BasicEnemyAI {
 
     Rotation r;
 
+    GameObject m_event_manager;
+
+    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
+        switch (e) {
+            case INPUT_EVENT.PAUSE: {
+                    enabled = false;
+                }
+                break;
+            case INPUT_EVENT.UNPAUSE: {
+                    enabled = true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnDestroy() {
+        m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+    }
+
     // Use this for initialization
     void Start() {
         Init();
+
+        m_event_manager = GameObject.Find("GlobalEventManager");
+        m_event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
     }
 
     IEnumerator FinishDrop() {

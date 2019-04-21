@@ -286,7 +286,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     void SwordJumpingDashFixedUpdate() {
         if (in_special_attack && !end_special_attack) {
             float y_diff = transform.position.y - current_target.transform.position.y;
-            float special_attack_jump_power = 100f;
+            float special_attack_jump_power = 80f;
 
             // jump above the enemy
             if (y_diff < 0f && special_flags.enable_sword_attack_jump) {
