@@ -10,10 +10,14 @@ public class PigKnightAI : BasicEnemyAI {
     [SerializeField]
     float swing_range;
     [SerializeField]
-    int num_attack_frames_hold;
+    int num_attack_hold_frames;
+    [SerializeField]
+    int num_attack_rest_frames;
 
     int attack_frame_start = 0;
+    int attack_rest_start = 0;
     bool is_attacking = false;
+    bool is_in_attack_rest = false;
     NavMeshAgent agent;
 
     GameObject m_event_manager;
@@ -34,7 +38,9 @@ public class PigKnightAI : BasicEnemyAI {
     }
 
     private void OnDestroy() {
-        m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+        if (m_event_manager != null) {
+            m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+        }
     }
 
     // Use this for initialization
@@ -58,13 +64,19 @@ public class PigKnightAI : BasicEnemyAI {
             Ray ray = new Ray(transform.position, to_target);
 
             int layer = 1 << LayerMask.NameToLayer("Current_Realm");
-            if (Physics.SphereCast(ray, ray_radius, out hit, swing_range, layer) && hit.collider.gameObject.tag == "Player" && !is_attacking) {
+            if (Physics.SphereCast(ray, ray_radius, out hit, swing_range, layer) && hit.collider.gameObject.tag == "Player" && !is_attacking && !is_in_attack_rest) {
                 Attack(to_target);
             }
 
-            if (is_attacking && (Time.frameCount - attack_frame_start) >= num_attack_frames_hold) {
+            if (is_attacking && (Time.frameCount - attack_frame_start) >= num_attack_hold_frames) {
                 w.EndAttack();
                 is_attacking = false;
+                is_in_attack_rest = true;
+                attack_rest_start = Time.frameCount;
+            }
+
+            if (is_in_attack_rest && (Time.frameCount - attack_rest_start) >= num_attack_rest_frames) {
+                is_in_attack_rest = false;
             }
         }
         else {

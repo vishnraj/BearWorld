@@ -30,7 +30,9 @@ public class PigShooterAI : BasicEnemyAI {
     }
 
     private void OnDestroy() {
-        m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+        if (m_event_manager != null) {
+            m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+        }
     }
 
     // Use this for initialization

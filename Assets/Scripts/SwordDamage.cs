@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class SwordDamage : DamageDealer {
     public bool attacking = false;
+    public float damage;
 
     HashSet<int> damage_dealt_to_enemy; // for this swing, did we already hit the given enemy?
-    public float damage;
 
     // Use this for initialization
     void Start () {
