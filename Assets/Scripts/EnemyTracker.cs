@@ -13,9 +13,17 @@ public class EnemyTracker : MonoBehaviour {
     GameObject m_event_manager;
     EnemyHealthEventPublisher m_publisher;
 
+    GameObject m_stage;
+
     // Use this for initialization
     void Start () {
-        
+        m_stage = GameObject.FindGameObjectWithTag("Stage");
+
+        foreach (Transform o in m_stage.transform) {
+            if (o.tag == "Enemy") {
+                AddEnemy(o.gameObject);
+            }
+        }
     }
 
     private void Awake() {

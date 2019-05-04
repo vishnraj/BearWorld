@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using InputEvents;
 
 public abstract class BasicEnemyAI : MonoBehaviour {
     public string desired_equipped;
@@ -14,7 +15,31 @@ public abstract class BasicEnemyAI : MonoBehaviour {
     protected GameObject equipped;
     protected BasicCharacter c;
     protected BasicWeapon w;
+
+    protected GameObject m_event_manager;
+
     Weapon.WeaponFactory f;
+
+    public void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
+        switch (e) {
+            case INPUT_EVENT.PAUSE: {
+                    enabled = false;
+                }
+                break;
+            case INPUT_EVENT.UNPAUSE: {
+                    enabled = true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnDestroy() {
+        if (m_event_manager != null) {
+            m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
+        }
+    }
 
     // Use this for initialization
     void Start () {
@@ -55,6 +80,9 @@ public abstract class BasicEnemyAI : MonoBehaviour {
             c.SetTarget(target);
             c.SetAimingDirection(target.transform.position);
         }
+
+        m_event_manager = GameObject.Find("GlobalEventManager");
+        m_event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
     }
 
     public void Setup(string _desired_equipped, GameObject _desired_ammo, float _desired_ammo_amount, ref GameObject _target) {

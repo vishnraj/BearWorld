@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using InputEvents;
 
 public class PigShooterAI : BasicEnemyAI {
     [SerializeField]
@@ -12,37 +11,11 @@ public class PigShooterAI : BasicEnemyAI {
 
     NavMeshAgent agent;
 
-    GameObject m_event_manager;
-
-    void GlobalInputEventsCallback(object sender, INPUT_EVENT e) {
-        switch (e) {
-            case INPUT_EVENT.PAUSE: {
-                    enabled = false;
-                }
-                break;
-            case INPUT_EVENT.UNPAUSE: {
-                    enabled = true;
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    private void OnDestroy() {
-        if (m_event_manager != null) {
-            m_event_manager.GetComponent<InputManager>().publisher.InputEvent -= GlobalInputEventsCallback;
-        }
-    }
-
     // Use this for initialization
     void Start() {
         Init();
 
         agent = GetComponent<NavMeshAgent>();
-
-        m_event_manager = GameObject.Find("GlobalEventManager");
-        m_event_manager.GetComponent<InputManager>().publisher.InputEvent += GlobalInputEventsCallback;
     }
 
     // Update is called once per frame
