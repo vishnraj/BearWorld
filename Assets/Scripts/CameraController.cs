@@ -48,18 +48,14 @@ public class CameraController : MonoBehaviour
     }
 
     void EquippedUpdate() {
-        if (Input.GetAxis("LeftTriggerAxis") > 0) {
+        if (left_trigger_pressed) {
             xrc.enabled = false;
             fc.enabled = true;
-
-            left_trigger_pressed = true;
         }
 
-        if (Input.GetAxis("LeftTriggerAxis") == 0) {
+        if (!left_trigger_pressed) {
             xrc.enabled = true;
             fc.enabled = false;
-
-            left_trigger_pressed = false;
         }
     }
 
@@ -71,7 +67,6 @@ public class CameraController : MonoBehaviour
                 break;
             case INVENTORY_EVENT.UNEQUIP: {
                     update = DefaultUpdate;
-                    left_trigger_pressed = false;
                 }
                 break;
         }
@@ -95,6 +90,14 @@ public class CameraController : MonoBehaviour
                     }
 
                     enabled = true;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_SET: {
+                    left_trigger_pressed = true;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_UNSET: {
+                    left_trigger_pressed = false;
                 }
                 break;
             default:

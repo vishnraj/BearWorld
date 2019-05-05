@@ -30,6 +30,8 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
     float current_joystick_angle = 0.0f;
     float margin_of_error = 5.0f;
 
+    bool l_trigger_set = false;
+
     Vector3 previous_target_pos;
 
     TargetingPublisher publisher;
@@ -87,7 +89,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
 
     void LockedOnUpdate() {
         // first checking if we are going to leave targeting state
-        if (Input.GetAxis("LeftTriggerAxis") == 0) {
+        if (!l_trigger_set) {
             DisableTargeting(); // if we can lock, aiming system will cover us
             return;
         }
@@ -124,7 +126,7 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
             return;
         }
 
-        if (Input.GetAxis("LeftTriggerAxis") > 0) {
+        if (l_trigger_set) {
             EngageNewTarget();
             update = LockedOnUpdate;
         }
@@ -142,6 +144,14 @@ public class ThirdPersonTargetingSystem : MonoBehaviour
                         enabled = true;
                     }
                     paused = false;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_SET: {
+                    l_trigger_set = true;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_UNSET: {
+                    l_trigger_set = false;
                 }
                 break;
             default:

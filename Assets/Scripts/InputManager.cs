@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 namespace InputEvents {
-    public enum INPUT_EVENT { PAUSE, UNPAUSE };
+    public enum INPUT_EVENT { PAUSE, UNPAUSE, L_TRIGGER_SET, L_TRIGGER_UNSET};
 
     public class InputPublisher {
         public delegate void InputEventHandler(object sender, INPUT_EVENT e);
@@ -19,10 +19,11 @@ namespace InputEvents {
 }
 
 public class InputManager : MonoBehaviour {
-
     public InputEvents.InputPublisher publisher;
     bool is_paused = false; // global state driven by input
                             // thus stored here
+
+    bool l_trigger_pushed = false;
 
 	// Use this for initialization
 	void Start () {
@@ -52,5 +53,17 @@ public class InputManager : MonoBehaviour {
                 is_paused = false;
             }
         }
-	}
+
+        if (Input.GetAxis("LeftTriggerAxis") > 0) {
+            if (!l_trigger_pushed) {
+                l_trigger_pushed = true;
+                publisher.OnInputEvent(InputEvents.INPUT_EVENT.L_TRIGGER_SET);
+            }
+        } else  {
+            if (l_trigger_pushed) {
+                l_trigger_pushed = false;
+                publisher.OnInputEvent(InputEvents.INPUT_EVENT.L_TRIGGER_UNSET);
+            }
+        }
+    }
 }

@@ -26,6 +26,8 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
     bool end_special_attack = false; // this is communicated from PlayerAttackController to this script - when end step of attack starts
     bool end_step_complete = false; // also communicated by PlayerAttackController to this script - when the attack is fully complete
 
+    bool left_trigger_pressed = false;
+
     // specific to special attack bools
     class SpecialAttackFlags {
         public bool sword_jump_attack = false;
@@ -103,6 +105,14 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
                 break;
             case INPUT_EVENT.UNPAUSE: {
                     enabled = true;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_SET: {
+                    left_trigger_pressed = true;
+                }
+                break;
+            case INPUT_EVENT.L_TRIGGER_UNSET: {
+                    left_trigger_pressed = false;
                 }
                 break;
             default:
@@ -348,7 +358,7 @@ public class XboxOneControllerThirdPersonMovement : MonoBehaviour
         float theta_final = CalculateThirdPersonZXRotation();
 
         // For when in fixed camera view
-        if (Input.GetAxis("LeftTriggerAxis") > 0) {
+        if (left_trigger_pressed) {
             movement_direction = Quaternion.Euler(0, theta_final, 0) * transform.forward;
         } else {
             transform.Rotate(Vector3.up, theta_final);
